@@ -30,7 +30,7 @@ AIC(model0)
 
 After a linear regression where the outcome was change in cholesterol level (mcg/dl), it was determined that the average difference between post- and pre-cholesterol level was significant (p = `r round(summary(model0)$coefficients[4], 6)`). The cholesterol level (mcg/dl) was 19.54 (mcg/dl) lower on average for the 24 hospital employees who switched from the standard American diet to a vegetarian diet for one month.
 
-```{r, part_b, echo=FALSE, include=FALSE}
+```{r part_b, echo=FALSE, include=FALSE}
 # part b
 result_t = t.test(data$before, data$after, paired = T)
 
@@ -40,7 +40,7 @@ result_t = t.test(data$before, data$after, paired = T)
 
 The simple test (see appendix) that could be performed to yield the same result as the previous is a paired $t$-test to detect differences between the two time points ($t$ = `r result_t$statistic`).
 
-```{r, part_c, echo=FALSE, include=FALSE}
+```{r part_c, echo=FALSE, include=FALSE}
 # part c
 model1 = lm(after ~ before, data = data)
 summary(model1)
@@ -97,24 +97,24 @@ $$H_0: \hat{\beta'_1} = 0, H_1: \hat{\beta'_1} \neq 0$$
 
 ### Part F
 
-```{r, echo=FALSE, include=FALSE}
-# load the SASmarkdown package
-library(SASmarkdown)
-# set up the options so that knit knows where you SAS executable is
-# set the linesize to be easily readable on letter size paper, portrait
-# and set the knir options using opts_chunk$set().
-saspath <- "C:/Program Files/SASHome/SASFoundation/9.4/sas.exe"
-sasopts <- "-nosplash -linesize 75"
-knitr::opts_chunk$set(engine="sas", engine.path=saspath,
-        engine.opts=sasopts, comment=NA)
-# run these commands to convince yourself that
-# within this knitr session the engine changed.
-knitr::opts_chunk$get()$engine
-knitr::opts_chunk$get()$engine.path
-knitr::opts_chunk$get()$engine.opts
+```{r sas-package, echo=FALSE, include=FALSE}
+# # load the SASmarkdown package
+# library(SASmarkdown)
+# # set up the options so that knit knows where you SAS executable is
+# # set the linesize to be easily readable on letter size paper, portrait
+# # and set the knir options using opts_chunk$set().
+# saspath <- "C:/Program Files/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sas", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
 ```
 
-```{sas question2, echo=FALSE, include=FALSE}
+```{r question2, echo=FALSE, include=FALSE, eval=FALSE}
 
 /* Question 2 */
 /* Import data */
@@ -178,7 +178,7 @@ This process is mostly stationary. When $|\phi| < 1$, the mean and variance are 
 
 \subsection{Question 4}
 
-```{sas question4, echo=FALSE, include=FALSE}
+```{r question4, echo=FALSE, include=FALSE, eval=FALSE}
 /* Question 4 */
 /* import data */
 proc import datafile = 'C:\Users\jofro\dev\longi\data\global_temp_anomalies.csv'
@@ -202,7 +202,8 @@ run;
 /* transform the residuals */
 data lag;
  set tempout;
- resid_lag = Resid + lag1(Resid)*0.7395;
+ y_new = pred + lag1(resid)*0.7395;
+ resid_lag = temp - y_new;
 run;
 
 /* plot the transformed residuals */
@@ -250,7 +251,7 @@ The residuals do not have constant variance over time. It seems as though our as
 ### Part B
 
 ![Plot of the residuals accounting for correlation between time points vs time from a mixed model with autocorrelation structure.](lagged_residual_plot.png)
-After accounting for correlation between time points, it seems as though there is a little better spread about the data. This is reasonoable, because we are scaling the residuals based on their previous time point, so those points close to 0 would still be close to 0 and those farther away from 0 would scale even farther from zero. So this plot should have the same shape as the previous, with larger variability. That being said, we are certainly still violating the constant variance assumption (homoscedascisity), there likely is a better model out there to fit these data (probably a non-linear approach).
+After accounting for correlation between time points, it seems as though there is a better spread about the data. This is reasonable, because we are scaling the residuals based on their previous time point. Our assumption of homoscedasticity seems to be met using this model. The errors are normally disdributed with equal variance about 0.
 
 ### Part C
 
@@ -258,10 +259,16 @@ Based on the model fitted above, the average increase in temperature per decade 
 
 ### Part D
 
-Based on looking at the plot, I chose a cubic function to model the time trend. The model fit in terms of information criterion is much better for the cubic function than it is for the linear time trend (>6 difference for AIC and BIC). Furthermore, the estimate for the correlation parameter has decreased from 0.72 to 0.47. This seems resonable because we are allowing for a more flesible model to explain changes between time points. This seems like a fairly good fit for this model. It terms of fit alone I would cetainly choose the cubic time trend model over the linear time trend model, it is explaining the variability in the data much better than the linear model. That being said, the cubic trend is extremely difficult to interpret, and would have to put more thought into interpretting that model.
+Based on looking at the plot, I chose a cubic function to model the time trend. The model fit in terms of information criterion is much better for the cubic function than it is for the linear time trend (>6 difference for AIC and BIC). Furthermore, the estimate for the correlation parameter has decreased from 0.72 to 0.47. This seems resonable because we are allowing for a more flesible model to explain changes between time points. This seems like a fairly good fit for this model. It terms of fit alone I would cetainly choose the cubic time trend model over the linear time trend model, it is explaining the variability in the data much better than the linear model. That being said, the cubic trend is extremely difficult to interpret, and would have to put more thought into interpreting that model.
 
 ### Part E
 
 ![Plot of the residuals vs time from a non-parametric loess model with autocorrelation structure.](loess_residual_plot.png)
 ![Histogram of the residuals from a non-parametric loess model with autocorrelation structure.](residual_hist.png)
-In general this seems to be a much better fit. The Errors are certainly more normally distributed that either the linear model or the polynomial model. This is also a different fit, and I don't know if we compare information criterion between parametric and non-parametric models. There is an obvious non-linear trend over time, and the non-parametric seems to be modeling this non-linear trend much better based on the residuals.
+In general this seems to be a pretty good fit. The errors are not much worse than the model with auto-regressive correlation structure. This is also a different fit, and I don't know if we compare information criterion between parametric and non-parametric models. There is an obvious non-linear trend over time, and the non-parametric seems to be modeling this non-linear trend fairly well based on the residuals, we should just be careful about how we convey results from a non-parametric method.
+
+\newpage
+\subsection{Appendix}
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```

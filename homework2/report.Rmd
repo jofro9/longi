@@ -1,0 +1,138 @@
+---
+title: "Homework 2"
+author: "Joseph Froelicher"
+date: October 6, 2021
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+---
+
+
+```{r setup, echo = FALSE, include = FALSE, warning = FALSE}
+library(ggplot2)
+
+data = read.table("../data/eno_data.txt", sep = " ", header = TRUE)
+
+```
+
+\subsection{Question 1}
+
+```{r question1, echo=FALSE, include=TRUE, warning=FALSE}
+pca = prcomp(data)
+
+regression = lm(eno_post ~ eno_pre, data=data)
+
+ggplot(data, aes(eno_pre, eno_post)) +
+  geom_point() +
+  geom_abline(aes(slope = pca$rotation[2, 1] / pca$rotation[2, 2], intercept = summary(regression)$coefficients[1, 1], colour = "blue"), show.legend = TRUE) +
+  coord_fixed() +
+  geom_abline(aes(slope = summary(regression)$coefficients[2, 1], intercept = summary(regression)$coefficients[1, 1], colour = "red"), show.legend = TRUE) +
+  scale_color_manual(name = "Lines: ", values = c("blue", "red"), labels = c("PC1", "Regression")) +
+  labs(x = "Pre eNO Value", y = "Post eNO", title = "PC1 axis vs. inear regression line") + theme(legend.position = "right")
+
+
+```
+\newpage
+\subsection{Question 2}
+
+### Part A
+General linear models contain at a minimum an outcome, modeled linearly by its intercept. They allow for additional parameters to define the slope of the line, which we typically refer to as $\beta$ coefficients. There can be any number of $\beta$ coefficients. These are referred to as fixed effects. Linear mixed models allow for the addition of what we refer to as random effects. The random effects could include random intercepts and random slopes. Also importantly in general linear models, we assume that the errors are normally distributed, that is $\epsilon\sim N(0, \sigma^2)$. One of the many uses of linear mixed models is that we can relax this assumption and model the errors with different structures. General linear models are a special case of linear mixed model that contain no random effects and have a simple error covariance structure. Both methods use commonly use both maximum likelihood estimation and restricted maximum likelihood estimation to estimate parameters.
+
+### Part B
+A profile likelihood is the standard likelihood function but where some subset of the parameters are estimated using maximum likelihood, and then the remaining parameters can be solved for analytically, sometimes referred to as profiling out. A restricted likelihood instead of estimating those parameters that were pofiled out before, they are eliminated by integrating the the log-likelihood function over the mean, which is effectively computing a marignal probability. This results in an unbiased estimate when compared to maximum likelihood estimation.
+m
+### Part C
+$$MLE[\mathbf{\beta}] = \mathbf{\hat{\beta}} = (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y$$
+$$Var\left[\mathbf{\hat{\beta}}\right] = Var\left[ (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y \right]$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}Var\left[y\right]\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}\textbf{V}\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
+\newpage
+\subsection{Question 3}
+
+### Parts A & B
+\small
+\begin{verbatim}
+  proc mixed data = data;
+    class prepar time;
+      model y = prepar time prepar*time / solution;
+      repeated / subject=ID(prepar) type=UN;
+    contrast "30 mg vs. 60 mg"
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 -1 0 0 0 -1 1 0 0 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 -1 0 0 -1 0 1 0 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 -1 0 -1 0 0 1 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1;
+    contrast "12-week vs. baseline"
+      prepar*time 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0 0 0 0 0 0,
+  	  prepar*time 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1 0 0 0 0 0,
+  	  prepar*time 1 0 0 0 -1 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 1,
+  	  prepar*time 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0,
+  	  prepar*time 0 0 0 0 0 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1;
+  run;
+\end{verbatim}
+\normalsize
+
+![Resutls of two contrasts for questions A and B.](q3_part_ab.png)
+
+### Part C
+\small
+\begin{verbatim}
+  data poly;
+   set data;
+   time_sq = time*time;
+   time_cu = time*time*time;
+  run;
+  
+  proc mixed data=poly;
+    class prepar;
+    model y = prepar time time_sq time_cu prepar*time prepar*time_sq prepar*time_cu / solution;
+    repeated / subject=ID(prepar) type=UN;
+  run;
+\end{verbatim}
+\normalsize
+
+Time as a class variable offers the most flexibility and imposes no parametric constraints imposed across levels of time. However, it uses more degrees of freedom in the model. Time as a continuous variable is recommended when there are many times of observation, possibly unequally spaced times, different times of measurement for subjects, and when interpolating estimates and predicted values may be of interest. We know that the quartic polynomial is equivalent to treating time as a class variable. Howwever seeing as we have been restricted to no higher than cubic, this are not effectively equivalent. The cubic model with continuous time may be a good choice because of unequally space time points. The model including time as categorical and all of its interactions has a significantly lower AIC (1054) than the cubic model (1174).
+
+### Part D
+```{r part_d, echo=FALSE, include=FALSE}
+library(janitor)
+library(tidyverse)
+
+data = read.csv('C:/Users/jofro/dev/longi/data/beta_carotene_univar.csv', header=TRUE) %>% clean_names()
+
+data = pivot_wider(data, names_from = time, values_from = y)
+colnames(data)[3:7] = c('baseline', "time1", "time2", "time3", "time4")
+data = pivot_longer(data, cols = starts_with("time"), names_to = "time", values_to = 'y')
+write.csv(data, 'C:/Users/jofro/dev/longi/data/beta_carotene_univar_CLEAN.csv')
+
+```
+
+\small
+\begin{verbatim}
+proc import datafile = 'C:\Users\jofro\dev\longi\data\beta_carotene_univar_CLEAN.csv'
+ out = clean
+ dbms = CSV;
+run;
+
+proc mixed data=clean;
+  class prepar time;
+  model y = prepar baseline time / solution;
+  repeated / subject=ID(prepar) type=UN;
+  estimate 'linear' time -3 -1 1 3;
+  estimate 'quadratic' time 1 -1 -1 1;
+  estimate 'cubic' time -1 3 -3 1;
+run;
+\end{verbatim}
+\normalsize
+
+One significant advantage to modeling the data in this way, is that by removing the baseline timepoint from the repeated measures outcome, the outcome now has equally spaced time points. It now makes much more sense to model time a categorical variable, because we have equally space time points, and we now can consider structuring the covariance matrix, particularly as AR(1). However, by removing the baseline measurement we can no longer specify a "start value" for each participant, we now just have the mean estimates (fixed effects).
+
+### Part E
+
+![Results of continuous time trend estimates, when time is a class variable](q3_part_e.png)
+  
+\newpage
+\subsection{Question 4}
+
