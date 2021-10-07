@@ -18,10 +18,7 @@ proc mixed data = data;
   contrast "12-week vs. baseline"
     prepar*time 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0 0 0 0 0 0,
 	prepar*time 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1 0 0 0 0 0,
-	prepar*time 1 0 0 0 -1 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 1,
-	prepar*time 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0,
-	prepar*time 0 0 0 0 0 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1,
-	prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1;
+	prepar*time 1 0 0 0 -1 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 1;
 run;
 
 /* Part C */

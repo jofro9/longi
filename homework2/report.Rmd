@@ -33,6 +33,9 @@ ggplot(data, aes(eno_pre, eno_post)) +
 
 
 ```
+
+The plot above indicates that the PC1 axis and linear regression provide similar context for the general trend of the data, or rather the association between pre and post. As we would expect, pre-eNO value is linearly associated with post-eNO value. We should note that the slope of these two lines is slightly difference, and this is a result of their differing methods of calculation.
+
 \newpage
 \subsection{Question 2}
 
@@ -41,14 +44,14 @@ General linear models contain at a minimum an outcome, modeled linearly by its i
 
 ### Part B
 A profile likelihood is the standard likelihood function but where some subset of the parameters are estimated using maximum likelihood, and then the remaining parameters can be solved for analytically, sometimes referred to as profiling out. A restricted likelihood instead of estimating those parameters that were pofiled out before, they are eliminated by integrating the the log-likelihood function over the mean, which is effectively computing a marignal probability. This results in an unbiased estimate when compared to maximum likelihood estimation.
-m
+  
 ### Part C
 $$MLE[\mathbf{\beta}] = \mathbf{\hat{\beta}} = (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y$$
 $$Var\left[\mathbf{\hat{\beta}}\right] = Var\left[ (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y \right]$$
-$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}Var\left[y\right]\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
-$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}\textbf{V}\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
-$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})(\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
-$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}Var\left[y\right]\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}\textbf{V}\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
 \newpage
 \subsection{Question 3}
 
@@ -144,7 +147,7 @@ One significant advantage to modeling the data in this way, is that by removing 
 $$\mathbf{Y}_{ijk}=\mu+\tau_j+\kappa_k+\gamma_{jk}+b_i+\epsilon_{ijk}$$
 $$
 \begin{array}{c}
-i=1,2\:(subject)\\ j=1,2,3\:(time)\\k=1,2,3\:(group)\\b_i\sim \mathcal{N}(0, \sigma^2)\\\epsilon_{ijk}\sim\mathcal{N}(0, \sigma^2)\end{array}
+\\\mu: \text{joint mean}\\\tau:\text{time catergory}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2,3\:(time)\\k=1,2,3\:(group)\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ijk}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}
 $$
 $$
 \textbf{X}_{(18, 16)}=\left[\begin{array}{ccccccccccccccccc}
@@ -173,12 +176,12 @@ _{subject\:6}&1&1&0&0&0&0&1&0&0&1&0&0&0&0&0&0\\
 _{subject\:6}&1&0&1&0&0&0&1&0&0&0&0&0&1&0&0&0\\
 _{subject\:6}&1&0&0&1&0&0&1&0&0&0&0&0&0&0&0&1\\
 \end{array}\right]
-$$
+$$\newpage
   
 #### Section ii, Set-to-0 Model
 
 $$\mathbf{Y}_{ijk}=\mu+\tau_j+\kappa_k+\gamma_{jk}+b_i+\epsilon_{ijk}$$
-$$\begin{array}{c}i=1,2\:(subject)\\ j=1,2\:(time, \text{ref=3})\\k=1,2\:(group, \text{ref=3})\\b_i\sim \mathcal{N}(0, \sigma^2)\\\epsilon_{ijk}\sim\mathcal{N}(0, \sigma^2)\end{array}$$
+$$\begin{array}{c}\\\mu: \text{joint mean}\\\tau:\text{time catergory}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2\:(time, \text{ref=3})\\k=1,2\:(group, \text{ref=3})\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ijk}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}$$
 $$
 \textbf{X}_{(8, 8)}=\left[\begin{array}{cccccccccc}
 &\mu&\tau_1&\tau_2&\kappa_1&\kappa_2&\gamma_{11}&\gamma_{12}&\gamma_{21}&\gamma_{22}\\
@@ -194,9 +197,10 @@ _{subject\:3}&1&0&1&0&1&0&0&0&1\\
 _{subject\:4}&1&1&0&0&1&0&1&0&0\\
 _{subject\:4}&1&0&1&0&1&0&0&0&1\\
 \end{array}\right]
-$$
+$$\newpage
   
-```{r ginv, echo=FALSE, include=TRUE, warning=FALSE}
+### Part B
+```{r ginv, echo=TRUE, include=TRUE, warning=FALSE}
 X = matrix(data = NA, nrow = 18, ncol = 16)
 X[1,] = c(1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
 X[2,] = c(1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
@@ -223,3 +227,52 @@ L = t(L_t)
 
 round((L %*% H), 1)-L
 ```
+
+Above, I took the design matrix $\textbf{X}$ used it to calculate $\textbf{H}$ the "hat" matrix using the `ginv()` function in R. To demonstrate that $\textbf{L} = \textbf{LH}$ we can just simply output $\textbf{LH} - \textbf{L}$, which should be a row vector of zeroes.\newpage
+
+### Part C
+
+In part A, our error distribution is $\epsilon_{ijk}\sim\mathcal{N}(0,\textbf{R}_i)$ where $\textbf{R}_i = \sigma_{\epsilon}^2\textbf{I}$. When we incorporate AR(1) covariance structure, the off diagonals of the covariance matrix are no longer zeroes, they are some function of the variance times the correlation parameter $\rho$.
+
+### Part D
+  
+#### Less Than Full Rank
+
+$$\mathbf{Y}_{ij}=\mu+\beta_{time}x_{1i}+\kappa_j+\gamma_{j}+b_i+\epsilon_{ij}$$
+$$
+\begin{array}{c}
+\\\mu: \text{joint mean}\\\beta_{time}:\text{continuous time regression coefficient}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2,3\:(group)\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ij}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}
+$$
+$$
+\textbf{X}_{(6, 8)}=\left[\begin{array}{ccccccccccccccc}
+&\mu&\beta_{time}&\kappa_1&\kappa_2&\kappa_3&\gamma_{time\:\text{x}\:group=1}&\gamma_{time\:\text{x}\:group=2}&\gamma_{time\:\text{x}\:group=3}\\
+_{subject\:1}&1&1&1&0&0&1&0&0&\\
+_{subject\:2}&1&1&1&0&0&1&0&0&\\
+_{subject\:3}&1&1&0&1&0&0&1&0&\\
+_{subject\:4}&1&1&0&1&0&0&1&0&\\
+_{subject\:5}&1&1&0&0&1&0&0&1&\\
+_{subject\:6}&1&1&0&0&1&0&0&1&\\
+\end{array}\right]
+$$
+
+### Part E
+  
+#### i.
+  
+There are times when it is either more or less appropriate to use time as a class variable. One of those times is when the times are equally spaced. One suggestion is when observations were not collected over equally spaced times, to treat time as continuous. So in this case, we should not be treating time as a class variable.
+  
+#### ii.
+  
+The particular covariance we have discussed about possibly using for when time is unequally spaced times is compound symmetry, this is a naive solution. There are some more sophisticated structures that account for points closer in time to be more correlated than those farther apart in time. One particular structure that adjusts for distance between measurements is the spatial power structure (See below).
+
+$$\textbf{R}_i=\left[
+\begin{array}{ccccccc}
+\sigma^2&\sigma^2\rho^{d_{12}}&\sigma^2\rho^{d_{13}}&\sigma^2\rho^{d_{14}}&\sigma^2\rho^{d_{15}}&\sigma^2\rho^{d_{16}}\\
+\sigma^2\rho^{d_{21}}&\sigma^2&\sigma^2\rho^{d_{23}}&\sigma^2\rho^{d_{24}}&\sigma^2\rho^{d_{25}}&\sigma^2\rho^{d_{26}}\\
+\sigma^2\rho^{d_{31}}&\sigma^2\rho^{d_{32}}&\sigma^2&\sigma^2\rho^{d_{34}}&\sigma^2\rho^{d_{35}}&\sigma^2\rho^{d_{36}}\\
+\sigma^2\rho^{d_{41}}&\sigma^2\rho^{d_{42}}&\sigma^2\rho^{d_{43}}&\sigma^2&\sigma^2\rho^{d_{45}}&\sigma^2\rho^{d_{46}}\\
+\sigma^2\rho^{d_{51}}&\sigma^2\rho^{d_{52}}&\sigma^2\rho^{d_{53}}&\sigma^2\rho^{d_{54}}&\sigma^2&\sigma^2\rho^{d_{56}}\\
+\sigma^2\rho^{d_{61}}&\sigma^2\rho^{d_{62}}&\sigma^2\rho^{d_{63}}&\sigma^2\rho^{d_{64}}&\sigma^2\rho^{d_{65}}&\sigma^2&\\
+\end{array}\right]
+$$
+where $d_{ij}$ is the estimated Euclidean distance between the $i^{\text{th}}$ and $j^{\text{th}}$ measurements.
