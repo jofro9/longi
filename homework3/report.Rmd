@@ -26,8 +26,9 @@ z = qnorm(1 - (alpha / 2))
 \section{Question 1}
 \subsection{Part A}
 
-$$y_i\sim Pois(e^{\beta_{intercept} + \beta_{condition}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}})$$
-$$Var(\textbf{Y}) = \mu$$
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+\epsilon_i})$$
+$$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
+$$Var(\textbf{Y}) = Var(\mu)$$
 
 ```{r question1_part_a, echo=TRUE, include=TRUE}
 # part a (Poisson model)
@@ -41,8 +42,9 @@ summary1$coefficients
 Using a poisson regression model, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary1$coefficients[2, 1]), 3), " (", round(exp(summary1$coefficients[2, 1] - summary1$coefficients[2, 2]*z), 3), ", ", round(exp(summary1$coefficients[2, 1] + summary1$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
 
 \subsection{Part B}
-$$y_i\sim Pois(e^{\beta_{intercept} + \beta_{condition}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}})$$
-$$Var(\textbf{Y}) = \phi\mu$$
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+\epsilon_i})$$
+$$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
+$$Var(\textbf{Y}) = \phi Var(\mu)$$
 
 ```{r question1_part_b, echo=TRUE, include=TRUE}
 # part b (Quasi-Poisson model)
@@ -70,13 +72,14 @@ summary3 = summary(model3)
 summary3$coefficients
 
 ```
-$$y_i\sim Pois(e^{\beta_{intercept} + \beta_{condition}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+\epsilon_i})$$
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+b_i+\epsilon_i})$$
 $$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
-Using a poisson regression model with random normal errors, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary1$coefficients[2, 1]), 3), " (", round(exp(summary3$coefficients[2, 1] - summary3$coefficients[2, 2]*z), 3), ", ", round(exp(summary3$coefficients[2, 1] + summary3$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
+$$b_i\sim\mathcal{N}(0,\sigma^2)$$
+Using a poisson regression model with random normal errors, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary3$coefficients[2, 1]), 3), " (", round(exp(summary3$coefficients[2, 1] - summary3$coefficients[2, 2]*z), 3), ", ", round(exp(summary3$coefficients[2, 1] + summary3$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
 
 
 \subsection{Part D}
-$$y_i\sim EF(\mu_i = log(\beta_{intercept} + \beta_{condition}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}), \phi)$$
+$$y_i\sim EF(\mu_i = log(\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}), \phi)$$
 
 ```{r question1_part_d, echo=FALSE, include=TRUE}
 # part d (Negative Binomial model)
@@ -127,4 +130,20 @@ kable(table1, booktabs=TRUE)
 
 ```
 \textbf{Table1}. Table of results from the four comparison models, Poisson, Quasi-Poisson, Random Normal Error Poisson, and Negative-Binomial.  
+
 According to all our analyses (Poisson Regression, Quasi-Poisson Regression, Poisson Regression with Random Normal Error, and Negative Binomial Regression), the experimental group (cond=1) had much higher consumption. The Poisson and Quasi-Poisson Regression models both estimated that the experimental group was consuming `r round(exp(summary1$coefficients[2, 1]), 3)` times as much cereal. The normal random error model estimated that the experimental group was consuming `r round(exp(summary3$coefficients[2, 1]), 3)` times as much cereal, and the negative binomial model estimated that the experimental group was consuming `r round(exp(summary4$coefficients[2, 1]), 3)` times as much cereal, compared to the control group.
+
+```{r fit, echo=TRUE, include=FALSE}
+aic1 = AIC(model1)
+aic2 = AIC(model2)
+aic3 = AIC(model3)
+aic4 = AIC(model4)
+
+bic1 = BIC(model1)
+bic2 = BIC(model2)
+bic3 = BIC(model3)
+bic4 = BIC(model4)
+
+```
+  
+Although it is not straightforward to compare all of these models, the results appear very similar (as seen in the table above). The least conservative model is the Poisson model (narrowest confidence interval for the estimate on condition). The most conservative is the Quasi-Poisson model (widest confidence intervals). There is no traditional likelihood function for the Quasi-Poisson method, so we have no information criterion to benchmark that method by. However, the lowest AIC (`r aic4`) and BIC (`r bic4`) value for the remaining three models is the negative binomial model. The estimates are similar throughout the models, and there is no difference in significance for any estimates between models.
