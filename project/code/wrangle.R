@@ -24,7 +24,9 @@ data$neighborhood_id2 = factor(data$neighborhood_id, levels = neighborhood_level
 ggplot(data, aes(neighborhood_id2)) +
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90), plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Bar plot of counts of crimes by neighborhood, Denver County 2020")
+  ggtitle("Bar plot of counts of crimes by neighborhood, Denver County 2020") +
+  xlab("Neighborhood") +
+  ylab("# of Crimes reported")
 
 # read in shapes
 denver_boundary = st_read("../shapes/statistical_neighborhoods.shp") %>% clean_names()
@@ -32,6 +34,7 @@ denver_boundary$neighborhood_id = tolower(denver_boundary$nbhd_name)
 denver_boundary$neighborhood_id = gsub(" - ", "-", denver_boundary$neighborhood_id)
 denver_boundary[denver_boundary$neighborhood_id == "lincoln park",]$neighborhood_id = "lincoln-park"
 denver_boundary$count = count(data, neighborhood_id)$n
+colnames(denver_boundary)[8] = "Crime Quantiles"
 
 # create bins
 bins = quantile(denver_boundary$count)
