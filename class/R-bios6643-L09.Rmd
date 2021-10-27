@@ -1,0 +1,175 @@
+---
+title: "BIOS6643. L9 Specifying LMM through $G_i$ and $R_i$ structures"
+cheauthor: "EJC"
+-- date: "" 
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{float}
+output: pdf_document
+---
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\itt}{\item}
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- -->
+
+
+```{r installp, echo = FALSE, eval=T, include=F}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(nlme)
+library(lme4)
+
+```
+
+# Dental study
+
+## Description
+
+- The orthodontic study data of Potthoff and Roy (1964). 
+
+- World famous data set that is used to introduce features of longitudinal data modeling and analysis
+
+- A study was conducted involving 27 children, 16 boys and 11 girls
+
+- For each child, the distance (mm) from the center of the pituitary to the pterygomaxillary fissure was measured at ages 8, 10, 12, and 14 years of age 
+
+- The pterygomaxillary fissure is a vertical opening in the human skull.
+
+- **Objectives** of the study included:
+
+  - Determine if distances over time are larger on average for boys than for girls
+  - Determine if the rate of change of distance over time is different for boys and girls.
+
+
+```{r eval=T, echo = T, include=TRUE}
+#  Read in the data 
+dat.den <- read.table("../data/dental.txt")
+dat.den <- dat.den[,2:5]      #  remove the first column
+colnames(dat.den) <- c("id","age","distance","gender")
+
+#  Total number of individuals
+m <- max(dat.den$id)
+
+head(dat.den, 2)
+table(dat.den$gender)
+```
+
+
+## Some descriptives:  
+
+```{r eval=T, echo = F, fig.height=3.7, include=T}
+################################################################################################
+### 
+
+dat.den <- within(dat.den, {  id <- factor(id)
+    gender <- factor(gender,levels=0:1,labels=c("Girls","Boys"))
+})
+
+ggplot(dat.den, aes(x = age, y = distance, group = id)) +
+  geom_line(aes(color = gender), alpha = 0.5) +
+  theme_classic() +
+  theme(legend.position = "top") +
+  ylab("Distance")
+
+```
+
+
+
+## a. Common G matrix for both genders with random intercept and slopes    
+
+```{r eval=T, echo = T, include=T}
+#  (a) Common G matrix for both genders, default diagonal within-child                               
+#      covariance matrix R_i with same variance sigma^2 for each
+#      gender.  
+
+dental.lme.a <- lme(distance ~ -1 + gender + age:gender,data=dat.den,
+                    random = ~ age | id,method="ML")
+summary(dental.lme.a)
+beta.a <- fixed.effects(dental.lme.a)  #  beta, also fixef(dental.lme.a)
+b.a <- random.effects(dental.lme.a)    #  posterior modes bi, also ranef(dental.lme.a)
+sebeta.a <- summary(dental.lme.a)$tTable[,"Std.Error"]  
+## Recall we can get the var-cov of fixed coefficients using 'varFix'
+## dental.lme.a$varFix
+
+G.a <- getVarCov(dental.lme.a, type="random.effects")   #  G matrix
+sigma2.a <- dental.lme.a$sigma^2  # sigma^2
+V.a <- getVarCov(dental.lme.a, type="marginal", individual=1)   # V_i
+R.a <- getVarCov(dental.lme.a, type="conditional", individual=1)   # R_i
+G.a
+V.a
+R.a
+
+```
+
+## b. Common G matrix with random intercepts and slopes, diagonal within-child covariance matrix R_i with different variance for each gender         
+```{r eval=T, echo = T, include=T}
+
+dental.lme.b <- lme(distance ~ -1 + gender + age:gender,data=dat.den,
+                    random = ~ age | id, weights = varIdent(form = ~ 1 | gender),
+                    method="ML")
+beta.b <- fixed.effects(dental.lme.b)  #  beta
+sebeta.model.b <-  sqrt(diag(dental.lme.b$varFix))
+b.b <- random.effects(dental.lme.b)    #  posterior modes bi
+G.b <- getVarCov(dental.lme.b, type="random.effects")   #  G matrix
+R.b.1 <- getVarCov(dental.lme.b,type="conditional",individual=1)   # R_1; first girl
+R.b.12 <- getVarCov(dental.lme.b,type="conditional",individual=12)   # R_12; first boy
+G.b
+R.b.1
+R.b.12
+
+V.b.1 <- getVarCov(dental.lme.b,type="marginal",individual=1)   # V_1 (girl)
+V.b.12 <- getVarCov(dental.lme.b,type="marginal",individual=12)   # V_12 (boy)
+V.b.1
+V.b.12
+
+```
+
+
+## c. Fit a common G matrix for both genders, and common within-child AR(1)
+```{r eval=T, echo = T, include=T}
+partc_model = lme(distance ~ -1 + gender + age:gender, data=dat.den, random = ~ age | id, correlation = corAR1(form = ~ age | id), method="ML")
+summaryc = summary(partc_model)
+R_c = getVarCov(partc_model1, type = "conditional", individual = 1)
+
+```
+
+## d. Fit a common G matrix for both genders, common within-child AR(1) exponential correlation
+```{r eval=T, echo = T, include=T}
+partd_model = lme(distance ~ -1 + gender + age:gender, data=dat.den, random = ~ age | id, correlation = corExp(form = ~ age | id), method="ML")
+summaryd = summary(partd_model)
+R_d = getVarCov(partd_model, type = "conditional", individual = 1)
+
+
+```
+
+## Compare models
+```{r eval=T, echo = T, include=T}
+
+
+```
+
+
+## Refit final model using REML. Obtain population (PA) and subject-specific (SS) fitted values and residuals. 
+**Note**: You may use *fitted(fit,level=0:1)* and *residuals(fit,level=0:1)*, where level=0 gives PA, level = 1 gives SS (default), and level = 0:1 gives both.  
+```{r eval=T, echo = T, include=T}
+partc_model = lme(distance ~ -1 + gender + age:gender, data=dat.den, random = ~ age | id, correlation = corAR1(form = ~ age | id), method="ML")
+summaryc = summary(partc_model)
+R_c = getVarCov(partc_model1, type = "conditional", individual = 1)
+
+partd_model = lme(distance ~ -1 + gender + age:gender, data=dat.den, random = ~ age | id, correlation = corExp(form = ~ age | id), method="ML")
+summaryd = summary(partd_model)
+R_d = getVarCov(partd_model, type = "conditional", individual = 1)
+
+```
+
+# Fit a LMM with random intercept and slopes using lme4:lmer
+
+

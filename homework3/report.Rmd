@@ -1,0 +1,149 @@
+---
+title: "Homework 2"
+author: "Joseph Froelicher"
+date: October 6, 2021
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+---
+
+```{r setup, echo = FALSE, include = FALSE, warning = FALSE}
+library(janitor)
+library(kableExtra)
+library(lme4)
+library(MASS)
+
+# data
+data = read.csv('../data/Cereal2.csv', header=TRUE) %>% clean_names()
+data = data[data$fam_mem == 3,]
+
+# for confidence intervals
+alpha = 0.05
+z = qnorm(1 - (alpha / 2))
+
+```
+
+\section{Question 1}
+\subsection{Part A}
+
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+\epsilon_i})$$
+$$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
+$$Var(\textbf{Y}) = Var(\mu)$$
+
+```{r question1_part_a, echo=TRUE, include=TRUE}
+# part a (Poisson model)
+model1 = glm(c1 ~ cond + factor(sex) + wt1, family = poisson(link = 'log'), data = data)
+summary1 = summary(model1)
+summary1$coefficients
+
+```
+
+
+Using a poisson regression model, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary1$coefficients[2, 1]), 3), " (", round(exp(summary1$coefficients[2, 1] - summary1$coefficients[2, 2]*z), 3), ", ", round(exp(summary1$coefficients[2, 1] + summary1$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
+
+\subsection{Part B}
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+\epsilon_i})$$
+$$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
+$$Var(\textbf{Y}) = \phi Var(\mu)$$
+
+```{r question1_part_b, echo=TRUE, include=TRUE}
+# part b (Quasi-Poisson model)
+model2 = glm(c1 ~ cond + factor(sex) + wt1, family=quasipoisson(link='log'), data=data)
+summary2 = summary(model2)
+summary2$coefficients
+
+se1 = summary1$coefficients[2,2]
+se1_by_dispersion = summary2$coefficients[2,2]/sqrt(summary2$dispersion)
+
+```
+
+Using a quasi-likelihood poisson regression model, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary1$coefficients[2, 1]), 3), " (", round(exp(summary2$coefficients[2, 1] - summary2$coefficients[2, 2]*z), 3), ", ", round(exp(summary2$coefficients[2, 1] + summary2$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
+
+\subsection{Part C}
+
+```{r question1_part_c, echo=TRUE, include=TRUE}
+# part c (Random Normal Error Poisson model)
+model3 = glmer(
+  c1 ~ cond + factor(sex) + wt1 + (1 | fam_idno),
+  family=poisson(link='log'),
+  data=data
+)
+summary3 = summary(model3)
+summary3$coefficients
+
+```
+$$y_i\sim Pois(e^{\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}+b_i+\epsilon_i})$$
+$$\epsilon_i\sim\mathcal{N}(0, \sigma^2)$$
+$$b_i\sim\mathcal{N}(0,\sigma^2)$$
+Using a poisson regression model with random normal errors, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary3$coefficients[2, 1]), 3), " (", round(exp(summary3$coefficients[2, 1] - summary3$coefficients[2, 2]*z), 3), ", ", round(exp(summary3$coefficients[2, 1] + summary3$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
+
+
+\subsection{Part D}
+$$y_i\sim EF(\mu_i = log(\beta_{0} + \beta_{cond}x_{1i} + \beta_{sex}x_{2i}+\beta_{weight}x_{3i}), \phi)$$
+
+```{r question1_part_d, echo=FALSE, include=TRUE}
+# part d (Negative Binomial model)
+model4 = glm.nb(c1 ~ cond + factor(sex) + wt1, link='log', data=data)
+summary4 = summary(model4)
+summary4$coefficients
+
+```
+Using a negative-binomial regression model, in the presence of sex and weight, the odds of being in the experimental increase `r paste(round(exp(summary4$coefficients[2, 1]), 3), " (", round(exp(summary4$coefficients[2, 1] - summary4$coefficients[2, 2]*z), 3), ", ", round(exp(summary4$coefficients[2, 1] + summary4$coefficients[2, 2]*z), 3), ")", sep="")` times over those with no special treatment.
+
+
+\section{Question 2}
+```{r table1, echo=FALSE, include=TRUE}
+# part a
+table1 = data.frame(
+  " " = c(
+    paste(round(exp(summary1$coefficients[1, 1]), 3)),
+    paste(round(exp(summary1$coefficients[2, 1]), 3), " (", round(exp(summary1$coefficients[2, 1] - summary1$coefficients[2, 2]*z), 3), ", ", round(exp(summary1$coefficients[2, 1] + summary1$coefficients[2, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary1$coefficients[3, 1]), 3), " (", round(exp(summary1$coefficients[3, 1] - summary1$coefficients[3, 2]*z), 3), ", ", round(exp(summary1$coefficients[3, 1] + summary1$coefficients[3, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary1$coefficients[4, 1]), 3), " (", round(exp(summary1$coefficients[4, 1] - summary1$coefficients[4, 2]*z), 3), ", ", round(exp(summary1$coefficients[4, 1] + summary1$coefficients[4, 2]*z), 3), ")", sep=""),
+    NA
+  ),
+  " " = c(
+    paste(round(exp(summary2$coefficients[1, 1]), 3)),
+    paste(round(exp(summary2$coefficients[2, 1]), 3), " (", round(exp(summary2$coefficients[2, 1] - summary2$coefficients[2, 2]*z), 3), ", ", round(exp(summary2$coefficients[2, 1] + summary2$coefficients[2, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary2$coefficients[3, 1]), 3), " (", round(exp(summary2$coefficients[3, 1] - summary2$coefficients[3, 2]*z), 3), ", ", round(exp(summary2$coefficients[3, 1] + summary2$coefficients[3, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary2$coefficients[4, 1]), 3), " (", round(exp(summary2$coefficients[4, 1] - summary2$coefficients[4, 2]*z), 3), ", ", round(exp(summary2$coefficients[4, 1] + summary2$coefficients[4, 2]*z), 3), ")", sep=""),
+    round(summary2$dispersion, 3)
+  ),
+  " " = c(
+    paste(round(exp(summary3$coefficients[1, 1]), 3)),
+    paste(round(exp(summary3$coefficients[2, 1]), 3), " (", round(exp(summary3$coefficients[2, 1] - summary3$coefficients[2, 2]*z), 3), ", ", round(exp(summary3$coefficients[2, 1] + summary3$coefficients[2, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary3$coefficients[3, 1]), 3), " (", round(exp(summary3$coefficients[3, 1] - summary3$coefficients[3, 2]*z), 3), ", ", round(exp(summary3$coefficients[3, 1] + summary3$coefficients[3, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary3$coefficients[4, 1]), 3), " (", round(exp(summary3$coefficients[4, 1] - summary3$coefficients[4, 2]*z), 3), ", ", round(exp(summary3$coefficients[4, 1] + summary3$coefficients[4, 2]*z), 3), ")", sep=""),
+    round(sqrt(summary3$varcor$fam_idno[1]), 3)
+  ),
+  " " = c(
+    paste(round(exp(summary4$coefficients[1, 1]), 3)),
+    paste(round(exp(summary4$coefficients[2, 1]), 3), " (", round(exp(summary4$coefficients[2, 1] - summary4$coefficients[2, 2]*z), 3), ", ", round(exp(summary4$coefficients[2, 1] + summary4$coefficients[2, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary4$coefficients[3, 1]), 3), " (", round(exp(summary4$coefficients[3, 1] - summary4$coefficients[3, 2]*z), 3), ", ", round(exp(summary4$coefficients[3, 1] + summary4$coefficients[3, 2]*z), 3), ")", sep=""),
+    paste(round(exp(summary4$coefficients[4, 1]), 3), " (", round(exp(summary4$coefficients[4, 1] - summary4$coefficients[4, 2]*z), 3), ", ", round(exp(summary4$coefficients[4, 1] + summary4$coefficients[4, 2]*z), 3), ")", sep=""),
+    round(summary4$theta, 3)
+  )
+)
+rownames(table1) = c("Intercept", "Condition", "Sex", "Weight", "Other")
+colnames(table1) = c("Poisson Regression", "Poisson QL", "Poisson + Normal error", "NB NLMIXED")
+kable(table1, booktabs=TRUE)
+
+```
+\textbf{Table1}. Table of results from the four comparison models, Poisson, Quasi-Poisson, Random Normal Error Poisson, and Negative-Binomial.  
+
+According to all our analyses (Poisson Regression, Quasi-Poisson Regression, Poisson Regression with Random Normal Error, and Negative Binomial Regression), the experimental group (cond=1) had much higher consumption. The Poisson and Quasi-Poisson Regression models both estimated that the experimental group was consuming `r round(exp(summary1$coefficients[2, 1]), 3)` times as much cereal. The normal random error model estimated that the experimental group was consuming `r round(exp(summary3$coefficients[2, 1]), 3)` times as much cereal, and the negative binomial model estimated that the experimental group was consuming `r round(exp(summary4$coefficients[2, 1]), 3)` times as much cereal, compared to the control group.
+
+```{r fit, echo=TRUE, include=FALSE}
+aic1 = AIC(model1)
+aic2 = AIC(model2)
+aic3 = AIC(model3)
+aic4 = AIC(model4)
+
+bic1 = BIC(model1)
+bic2 = BIC(model2)
+bic3 = BIC(model3)
+bic4 = BIC(model4)
+
+```
+  
+Although it is not straightforward to compare all of these models, the results appear very similar (as seen in the table above). The least conservative model is the Poisson model (narrowest confidence interval for the estimate on condition). The most conservative is the Quasi-Poisson model (widest confidence intervals). There is no traditional likelihood function for the Quasi-Poisson method, so we have no information criterion to benchmark that method by. However, the lowest AIC (`r aic4`) and BIC (`r bic4`) value for the remaining three models is the negative binomial model. The estimates are similar throughout the models, and there is no difference in significance for any estimates between models.
