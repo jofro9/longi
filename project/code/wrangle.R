@@ -6,6 +6,7 @@ library(lubridate)
 library(tidyverse)
 library(sf)
 
+# https://www.kaggle.com/paultimothymooney/denver-crime-data/version/126?select=crime.csv
 data = read.csv("../data_raw/crime.csv", header=TRUE) %>% clean_names()
 
 data = data %>%
