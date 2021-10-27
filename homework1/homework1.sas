@@ -50,7 +50,8 @@ run;
 /* transform the residuals */
 data lag;
  set tempout;
- resid_lag = Resid + lag1(Resid) * 0.7395;
+ y_new = pred + lag1(resid)*0.7395;
+ resid_lag = temp - y_new;
 run;
 
 /* plot the transformed residuals */

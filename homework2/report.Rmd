@@ -1,0 +1,278 @@
+---
+title: "Homework 2"
+author: "Joseph Froelicher"
+date: October 6, 2021
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+---
+
+
+```{r setup, echo = FALSE, include = FALSE, warning = FALSE}
+library(ggplot2)
+library(MASS)
+
+data = read.table("../data/eno_data.txt", sep = " ", header = TRUE)
+
+```
+
+\subsection{Question 1}
+
+```{r question1, echo=FALSE, include=TRUE, warning=FALSE}
+pca = prcomp(data)
+
+regression = lm(eno_post ~ eno_pre, data=data)
+
+ggplot(data, aes(eno_pre, eno_post)) +
+  geom_point() +
+  geom_abline(aes(slope = pca$rotation[2, 1] / pca$rotation[2, 2], intercept = summary(regression)$coefficients[1, 1], colour = "blue"), show.legend = TRUE) +
+  coord_fixed() +
+  geom_abline(aes(slope = summary(regression)$coefficients[2, 1], intercept = summary(regression)$coefficients[1, 1], colour = "red"), show.legend = TRUE) +
+  scale_color_manual(name = "Lines: ", values = c("blue", "red"), labels = c("PC1", "Regression")) +
+  labs(x = "Pre eNO Value", y = "Post eNO", title = "PC1 axis vs. inear regression line") + theme(legend.position = "right")
+
+
+```
+
+The plot above indicates that the PC1 axis and linear regression provide similar context for the general trend of the data, or rather the association between pre and post. As we would expect, pre-eNO value is linearly associated with post-eNO value. We should note that the slope of these two lines is slightly difference, and this is a result of their differing methods of calculation.
+
+\newpage
+\subsection{Question 2}
+
+### Part A
+General linear models contain at a minimum an outcome, modeled linearly by its intercept. They allow for additional parameters to define the slope of the line, which we typically refer to as $\beta$ coefficients. There can be any number of $\beta$ coefficients. These are referred to as fixed effects. Linear mixed models allow for the addition of what we refer to as random effects. The random effects could include random intercepts and random slopes. Also importantly in general linear models, we assume that the errors are normally distributed, that is $\epsilon\sim N(0, \sigma^2)$. One of the many uses of linear mixed models is that we can relax this assumption and model the errors with different structures. General linear models are a special case of linear mixed model that contain no random effects and have a simple error covariance structure. Both methods use commonly use both maximum likelihood estimation and restricted maximum likelihood estimation to estimate parameters.
+
+### Part B
+A profile likelihood is the standard likelihood function but where some subset of the parameters are estimated using maximum likelihood, and then the remaining parameters can be solved for analytically, sometimes referred to as profiling out. A restricted likelihood instead of estimating those parameters that were pofiled out before, they are eliminated by integrating the the log-likelihood function over the mean, which is effectively computing a marignal probability. This results in an unbiased estimate when compared to maximum likelihood estimation.
+  
+### Part C
+$$MLE[\mathbf{\beta}] = \mathbf{\hat{\beta}} = (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y$$
+$$Var\left[\mathbf{\hat{\beta}}\right] = Var\left[ (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}y \right]$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}Var\left[y\right]\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}\textbf{X}^T\textbf{V}^{-1}\textbf{V}\textbf{V}^{-1}\textbf{X}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}X)^{-1}(\textbf{X}^T\textbf{V}^{-1}\textbf{X})(\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+$$Var\left[\mathbf{\hat{\beta}}\right] =  (\textbf{X}^T\textbf{V}^{-1}\textbf{X})^{-1}$$
+\newpage
+\subsection{Question 3}
+
+### Parts A & B
+\small
+\begin{verbatim}
+  proc mixed data = data;
+    class prepar time;
+      model y = prepar time prepar*time / solution;
+      repeated / subject=ID(prepar) type=UN;
+    contrast "30 mg vs. 60 mg"
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 -1 0 0 0 -1 1 0 0 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 -1 0 0 -1 0 1 0 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 -1 0 -1 0 0 1 0,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1;
+    contrast "12-week vs. baseline"
+      prepar*time 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0 0 0 0 0 0,
+  	  prepar*time 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1 0 0 0 0 0,
+  	  prepar*time 1 0 0 0 -1 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 1,
+  	  prepar*time 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1 0 0 0 0 0,
+  	  prepar*time 0 0 0 0 0 1 0 0 0 -1 0 0 0 0 0 -1 0 0 0 1,
+  	  prepar*time 0 0 0 0 0 0 0 0 0 0 1 0 0 0 -1 -1 0 0 0 1;
+  run;
+\end{verbatim}
+\normalsize
+
+![Resutls of two contrasts for questions A and B.](q3_part_ab.png)
+
+### Part C
+\small
+\begin{verbatim}
+  data poly;
+   set data;
+   time_sq = time*time;
+   time_cu = time*time*time;
+  run;
+  
+  proc mixed data=poly;
+    class prepar;
+    model y = prepar time time_sq time_cu prepar*time prepar*time_sq prepar*time_cu / solution;
+    repeated / subject=ID(prepar) type=UN;
+  run;
+\end{verbatim}
+\normalsize
+
+Time as a class variable offers the most flexibility and imposes no parametric constraints imposed across levels of time. However, it uses more degrees of freedom in the model. Time as a continuous variable is recommended when there are many times of observation, possibly unequally spaced times, different times of measurement for subjects, and when interpolating estimates and predicted values may be of interest. We know that the quartic polynomial is equivalent to treating time as a class variable. Howwever seeing as we have been restricted to no higher than cubic, this are not effectively equivalent. The cubic model with continuous time may be a good choice because of unequally space time points. The model including time as categorical and all of its interactions has a significantly lower AIC (1054) than the cubic model (1174).
+
+### Part D
+```{r part_d, echo=FALSE, include=FALSE}
+library(janitor)
+library(tidyverse)
+
+data = read.csv('C:/Users/jofro/dev/longi/data/beta_carotene_univar.csv', header=TRUE) %>% clean_names()
+
+data = pivot_wider(data, names_from = time, values_from = y)
+colnames(data)[3:7] = c('baseline', "time1", "time2", "time3", "time4")
+data = pivot_longer(data, cols = starts_with("time"), names_to = "time", values_to = 'y')
+write.csv(data, 'C:/Users/jofro/dev/longi/data/beta_carotene_univar_CLEAN.csv')
+
+```
+
+\small
+\begin{verbatim}
+proc import datafile = 'C:\Users\jofro\dev\longi\data\beta_carotene_univar_CLEAN.csv'
+ out = clean
+ dbms = CSV;
+run;
+
+proc mixed data=clean;
+  class prepar time;
+  model y = prepar baseline time / solution;
+  repeated / subject=ID(prepar) type=UN;
+  estimate 'linear' time -3 -1 1 3;
+  estimate 'quadratic' time 1 -1 -1 1;
+  estimate 'cubic' time -1 3 -3 1;
+run;
+\end{verbatim}
+\normalsize
+
+One significant advantage to modeling the data in this way, is that by removing the baseline timepoint from the repeated measures outcome, the outcome now has equally spaced time points. It now makes much more sense to model time a categorical variable, because we have equally space time points, and we now can consider structuring the covariance matrix, particularly as AR(1). However, by removing the baseline measurement we can no longer specify a "start value" for each participant, we now just have the mean estimates (fixed effects).
+
+### Part E
+
+![Results of continuous time trend estimates, when time is a class variable](q3_part_e.png)
+  
+\newpage
+\subsection{Question 4}
+
+### Part A
+
+#### Section i, LTFR Model
+
+$$\mathbf{Y}_{ijk}=\mu+\tau_j+\kappa_k+\gamma_{jk}+b_i+\epsilon_{ijk}$$
+$$
+\begin{array}{c}
+\\\mu: \text{joint mean}\\\tau:\text{time catergory}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2,3\:(time)\\k=1,2,3\:(group)\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ijk}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}
+$$
+$$
+\textbf{X}_{(18, 16)}=\left[\begin{array}{ccccccccccccccccc}
+&\mu&\tau_1&\tau_2&\tau_3&\kappa_1&\kappa_2&\kappa_3&\gamma_{11}&\gamma_{12}&\gamma_{13}&\gamma_{21}&\gamma_{22}&\gamma_{23}&\gamma_{31}&\gamma_{32}&\gamma_{33}\\
+_{subject\:1}&1&1&0&0&1&0&0&1&0&0&0&0&0&0&0&0\\
+_{subject\:1}&1&0&1&0&1&0&0&0&0&0&1&0&0&0&0&0\\
+_{subject\:1}&1&0&0&1&1&0&0&0&0&0&0&0&0&1&0&0\\
+&-&-&-&-&-&-&-&-&-&-&-&-&-&-&-\\
+_{subject\:2}&1&1&0&0&1&0&0&1&0&0&0&0&0&0&0&0\\
+_{subject\:2}&1&0&1&0&1&0&0&0&0&0&1&0&0&0&0&0\\
+_{subject\:2}&1&0&0&1&1&0&0&0&0&0&0&0&0&1&0&0\\
+&-&-&-&-&-&-&-&-&-&-&-&-&-&-&-\\
+_{subject\:3}&1&1&0&0&0&1&0&0&1&0&0&0&0&0&0&0\\
+_{subject\:3}&1&0&1&0&0&1&0&0&0&0&0&1&0&0&0&0\\
+_{subject\:3}&1&0&0&1&0&1&0&0&0&0&0&0&0&0&1&0\\
+&-&-&-&-&-&-&-&-&-&-&-&-&-&-&-\\
+_{subject\:4}&1&1&0&0&0&1&0&0&1&0&0&0&0&0&0&0\\
+_{subject\:4}&1&0&1&0&0&1&0&0&0&0&0&1&0&0&0&0\\
+_{subject\:4}&1&0&0&1&0&1&0&0&0&0&0&0&0&0&1&0\\
+&-&-&-&-&-&-&-&-&-&-&-&-&-&-&-\\
+_{subject\:5}&1&1&0&0&0&0&1&0&0&1&0&0&0&0&0&0\\
+_{subject\:5}&1&0&1&0&0&0&1&0&0&0&0&0&1&0&0&0\\
+_{subject\:5}&1&0&0&1&0&0&1&0&0&0&0&0&0&0&0&1\\
+&-&-&-&-&-&-&-&-&-&-&-&-&-&-&-\\
+_{subject\:6}&1&1&0&0&0&0&1&0&0&1&0&0&0&0&0&0\\
+_{subject\:6}&1&0&1&0&0&0&1&0&0&0&0&0&1&0&0&0\\
+_{subject\:6}&1&0&0&1&0&0&1&0&0&0&0&0&0&0&0&1\\
+\end{array}\right]
+$$\newpage
+  
+#### Section ii, Set-to-0 Model
+
+$$\mathbf{Y}_{ijk}=\mu+\tau_j+\kappa_k+\gamma_{jk}+b_i+\epsilon_{ijk}$$
+$$\begin{array}{c}\\\mu: \text{joint mean}\\\tau:\text{time catergory}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2\:(time, \text{ref=3})\\k=1,2\:(group, \text{ref=3})\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ijk}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}$$
+$$
+\textbf{X}_{(8, 8)}=\left[\begin{array}{cccccccccc}
+&\mu&\tau_1&\tau_2&\kappa_1&\kappa_2&\gamma_{11}&\gamma_{12}&\gamma_{21}&\gamma_{22}\\
+_{subject\:1}&1&1&0&1&0&1&0&0&0\\
+_{subject\:1}&1&0&1&1&0&0&0&1&0\\
+&-&-&-&-&-&-&-&-&-\\
+_{subject\:2}&1&1&0&1&0&1&0&0&0\\
+_{subject\:2}&1&0&1&1&0&0&0&1&0\\
+&-&-&-&-&-&-&-&-&-\\
+_{subject\:3}&1&1&0&0&1&0&1&0&0\\
+_{subject\:3}&1&0&1&0&1&0&0&0&1\\
+&-&-&-&-&-&-&-&-&-\\
+_{subject\:4}&1&1&0&0&1&0&1&0&0\\
+_{subject\:4}&1&0&1&0&1&0&0&0&1\\
+\end{array}\right]
+$$\newpage
+  
+### Part B
+```{r ginv, echo=TRUE, include=TRUE, warning=FALSE}
+X = matrix(data = NA, nrow = 18, ncol = 16)
+X[1,] = c(1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+X[2,] = c(1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+X[3,] = c(1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+X[4,] = c(1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+X[5,] = c(1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+X[6,] = c(1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+X[7,] = c(1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+X[8,] = c(1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+X[9,] = c(1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+X[10,] = c(1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+X[11,] = c(1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+X[12,] = c(1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+X[13,] = c(1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+X[14,] = c(1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+X[15,] = c(1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+X[16,] = c(1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+X[17,] = c(1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+X[18,] = c(1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+
+H = ginv(t(X) %*% X, tol = .Machine$double.eps) %*% t(X) %*% X
+L_t = c(0, 0, 0, 0, 1, -1, 0, 1, -1, 0, 0, 0, 0, 0, 0, 0)
+L = t(L_t)
+
+round((L %*% H), 1)-L
+```
+
+Above, I took the design matrix $\textbf{X}$ used it to calculate $\textbf{H}$ the "hat" matrix using the `ginv()` function in R. To demonstrate that $\textbf{L} = \textbf{LH}$ we can just simply output $\textbf{LH} - \textbf{L}$, which should be a row vector of zeroes.\newpage
+
+### Part C
+
+In part A, our error distribution is $\epsilon_{ijk}\sim\mathcal{N}(0,\textbf{R}_i)$ where $\textbf{R}_i = \sigma_{\epsilon}^2\textbf{I}$. When we incorporate AR(1) covariance structure, the off diagonals of the covariance matrix are no longer zeroes, they are some function of the variance times the correlation parameter $\rho$.
+
+### Part D
+  
+#### Less Than Full Rank
+
+$$\mathbf{Y}_{ij}=\mu+\beta_{time}x_{1i}+\kappa_j+\gamma_{j}+b_i+\epsilon_{ij}$$
+$$
+\begin{array}{c}
+\\\mu: \text{joint mean}\\\beta_{time}:\text{continuous time regression coefficient}\\\kappa:\text{group catergory}\\\gamma:\text{group time interaction}\\i=1,2\:(subject)\\ j=1,2,3\:(group)\\b_i\sim \mathcal{N}(0, \textbf{G}_i)\\\epsilon_{ij}\sim\mathcal{N}(0, \textbf{R}_i)\\\textbf{G}_i=\sigma_{b}^2\textbf{I}\\\textbf{R}_i=\sigma_{\epsilon}^2\textbf{I}\end{array}
+$$
+$$
+\textbf{X}_{(6, 8)}=\left[\begin{array}{ccccccccccccccc}
+&\mu&\beta_{time}&\kappa_1&\kappa_2&\kappa_3&\gamma_{time\:\text{x}\:group=1}&\gamma_{time\:\text{x}\:group=2}&\gamma_{time\:\text{x}\:group=3}\\
+_{subject\:1}&1&1&1&0&0&1&0&0&\\
+_{subject\:2}&1&1&1&0&0&1&0&0&\\
+_{subject\:3}&1&1&0&1&0&0&1&0&\\
+_{subject\:4}&1&1&0&1&0&0&1&0&\\
+_{subject\:5}&1&1&0&0&1&0&0&1&\\
+_{subject\:6}&1&1&0&0&1&0&0&1&\\
+\end{array}\right]
+$$
+
+### Part E
+  
+#### i.
+  
+There are times when it is either more or less appropriate to use time as a class variable. One of those times is when the times are equally spaced. One suggestion is when observations were not collected over equally spaced times, to treat time as continuous. So in this case, we should not be treating time as a class variable.
+  
+#### ii.
+  
+The particular covariance we have discussed about possibly using for when time is unequally spaced times is compound symmetry, this is a naive solution. There are some more sophisticated structures that account for points closer in time to be more correlated than those farther apart in time. One particular structure that adjusts for distance between measurements is the spatial power structure (See below).
+
+$$\textbf{R}_i=\left[
+\begin{array}{ccccccc}
+\sigma^2&\sigma^2\rho^{d_{12}}&\sigma^2\rho^{d_{13}}&\sigma^2\rho^{d_{14}}&\sigma^2\rho^{d_{15}}&\sigma^2\rho^{d_{16}}\\
+\sigma^2\rho^{d_{21}}&\sigma^2&\sigma^2\rho^{d_{23}}&\sigma^2\rho^{d_{24}}&\sigma^2\rho^{d_{25}}&\sigma^2\rho^{d_{26}}\\
+\sigma^2\rho^{d_{31}}&\sigma^2\rho^{d_{32}}&\sigma^2&\sigma^2\rho^{d_{34}}&\sigma^2\rho^{d_{35}}&\sigma^2\rho^{d_{36}}\\
+\sigma^2\rho^{d_{41}}&\sigma^2\rho^{d_{42}}&\sigma^2\rho^{d_{43}}&\sigma^2&\sigma^2\rho^{d_{45}}&\sigma^2\rho^{d_{46}}\\
+\sigma^2\rho^{d_{51}}&\sigma^2\rho^{d_{52}}&\sigma^2\rho^{d_{53}}&\sigma^2\rho^{d_{54}}&\sigma^2&\sigma^2\rho^{d_{56}}\\
+\sigma^2\rho^{d_{61}}&\sigma^2\rho^{d_{62}}&\sigma^2\rho^{d_{63}}&\sigma^2\rho^{d_{64}}&\sigma^2\rho^{d_{65}}&\sigma^2&\\
+\end{array}\right]
+$$
+where $d_{ij}$ is the estimated Euclidean distance between the $i^{\text{th}}$ and $j^{\text{th}}$ measurements.
