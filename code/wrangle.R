@@ -35,13 +35,12 @@ denver_boundary$count = count(data, neighborhood_id)$n
 
 # create bins
 bins = quantile(denver_boundary$count)
-names = names(bins)[2:5]
+names = c("0-25%", "25-50%", "50-75%", "75-100%")
 denver_boundary$count_bins = cut(denver_boundary$count, breaks = bins, labels = names, include.lowest = TRUE)
+colnames(denver_boundary)[8] = "Crime Quantiles"
 
 ggplot() + 
-  geom_sf(data = denver_boundary, aes(fill = count_bins), size = 0.5, color = "gray") +
+  geom_sf(data = denver_boundary, aes(fill = `Crime Quantiles`), size = 0.5, color = "gray") +
   ggtitle("Crimes by Neighborhood, Denver 2019") +
   scale_fill_brewer(palette = "YlOrRd") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom", legend.title = "Crime Quantiles")
-
-
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
