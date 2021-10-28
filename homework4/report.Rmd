@@ -1,0 +1,70 @@
+---
+title: "Homework 4"
+author: "Joseph Froelicher"
+date: November 1, 2021
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+---
+
+\section{Question 1}
+
+```{r setup, echo = FALSE, include = FALSE, warning = FALSE}
+```
+
+$$
+\textbf{Z}_{(3, 2)}=\left[\begin{array}{cc}
+1&0\\
+1&1\\
+1&2\\
+\end{array}\right],\:
+\textbf{G}_{(2, 2)}=\left[\begin{array}{cc}
+\sigma_1^2&\sigma_{12}\\
+\sigma_{12}&\sigma_2^2\\
+\end{array}\right],\:
+\textbf{R}_{(3, 3)}=\left[\begin{array}{ccc}
+\sigma_\epsilon^2&0&0\\
+0&\sigma_\epsilon^2&0\\
+0&0&\sigma_\epsilon^2\\
+\end{array}\right]
+$$
+
+$$
+\textbf{ZG}_{(3, 2)}=\left[\begin{array}{cc}
+\sigma_1^2&\sigma_{12}\\
+\sigma_1^2+\sigma_{12}&\sigma_{12}+\sigma_2^2\\
+\sigma_1^2+2\sigma_{12}&\sigma_{12}+2\sigma_2^2\\
+\end{array}\right],\:
+\textbf{Z}^T_{(2, 3)}=\left[\begin{array}{ccc}
+1&1&1\\
+0&1&2\\
+\end{array}\right]
+$$
+
+$$
+\textbf{ZGZ}^T_{(3, 3)}=\left[\begin{array}{ccc}
+\sigma_1^2&\sigma_1^2+\sigma_{12}&\sigma_1^2+2\sigma_{12}\\
+\sigma_1^2+\sigma_{12}&\sigma_1^2+2\sigma_{12}+\sigma_2^2&\sigma_1^2+3\sigma_{12}+2\sigma_2^2\\
+\sigma_1^2+2\sigma_{12}&\sigma_1^2+3\sigma_{12}+2\sigma_2^2&\sigma_1^2+4\sigma_{12}+4\sigma_2^2\\
+\end{array}\right]
+$$
+
+$$
+\textbf{V}_{(3, 3)}=\textbf{ZGZ}^T+\textbf{R}=\left[\begin{array}{ccc}
+\sigma_1^2+\sigma_\epsilon^2&\sigma_1^2+\sigma_{12}&\sigma_1^2+2\sigma_{12}\\
+\sigma_1^2+\sigma_{12}&\sigma_1^2+2\sigma_{12}+\sigma_2^2+\sigma_\epsilon^2&\sigma_1^2+3\sigma_{12}+2\sigma_2^2\\
+\sigma_1^2+2\sigma_{12}&\sigma_1^2+3\sigma_{12}+2\sigma_2^2&\sigma_1^2+4\sigma_{12}+4\sigma_2^2+\sigma_\epsilon^2\\
+\end{array}\right]
+$$
+
+$$Cov[Y_{i1}, Y_{i2}] > Cov[Y_{i1}, Y_{i3}]$$
+$$\implies \sigma_1^2+\sigma_{12} > \sigma_1^2+2\sigma_{12}$$
+$$\implies 0>\sigma_{12}$$
+$Cov[Y_{i1}, Y_{i2}] > Cov[Y_{i1}, Y_{i3}]$ holds true if $\sigma_{12}$ is negative. That is the covariance parameter $\sigma_{12}$ from the $\textbf{G}$ matrix is negative.
+
+$$Cov[Y_{i1}, Y_{i3}] < Cov[Y_{i2}, Y_{i3}]$$
+
+$$\implies \sigma_1^2+2\sigma_{12}<\sigma_1^2+3\sigma_{12}+2\sigma_2^2$$
+$$\implies 0<\sigma_{12}+2\sigma_2^2$$
+$$\implies |\:\sigma_{12}\:|<2\sigma_2^2$$
+$Cov[Y_{i1}, Y_{i3}] < Cov[Y_{i2}, Y_{i3}]$ holds true if $|\:\sigma_{12}\:|<2\sigma_2^2$. That is the absolute value of the covariance parameter $\sigma_{12}$ from the $\textbf{G}$ matrix is is less than twice the variance parameter $\sigma_2^2$ from the same $\textbf{G}$ matrix.
