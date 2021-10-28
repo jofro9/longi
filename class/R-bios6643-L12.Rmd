@@ -1,0 +1,161 @@
+---
+title: "BIOS6643. L12 GEE and Marginal Models"
+cheauthor: "EJC"
+-- date: "" 
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{float}
+output: pdf_document
+---
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\itt}{\item}
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- -->
+
+
+```{r installp, echo = FALSE, eval=T, include=F}
+##library(dplyr)
+##library(tidyverse)
+##library(ggplot2)
+library(gee)
+library(geepack)
+
+
+```
+
+
+
+Fitting population-averaged models using the gee() function and  the geeglm() function in geepack.  We will need to install.packages("gee")
+ and install.packages("geepack").
+
+The syntax for each is similar.  A general call looks like
+
+fit.object <- gee(model formula, id, corstr, family, data)
+
+  - **corstr** is a specification for the working correlation matrix
+
+  - **family** is a specification for the scaled exponential family that
+ would be relevant under independence; the canonical link is the default
+
+# Dental data
+## Example of continuous outcome
+
+```{r eval=T, echo = T, include=TRUE}
+
+##  Read in the data 
+dat.den <- read.csv("../data/dental.csv")
+head(dat.den,3)
+
+
+##dat.den$id <- as.factor(dat.den$id)
+##dat.den$gender <- as.factor(dat.den$gender)
+
+ind.gee.den <- gee(distance ~ age*gender,
+             id = id,
+             data = dat.den,
+             family = gaussian,
+             corstr = "independence"
+             )
+summary(ind.gee.den)
+```
+
+Recall the interpretation of the parameter estimates is at the population level. For instance for boys, the $\hat{\beta}_{age}=0.78$ may be interpreted as the average (expected) increase in distance per year of age increased.  
+
+
+# Seizure data using gee()
+## Epileptic Seizure Study of a randomized trial reported in Thall and Vail (1990). 
+- 59 subjects with epilepsy suffering from simple or partial seizures were assigned at random to receive either the anti-epileptic drug progabide  or a placebo in addition to a standard chemotherapy regimen all were taking. 
+
+- Because each individual might be prone to different rates of experiencing seizures, the investigators first tried to get a sense of this by recording the number of seizures suffered by each subject over the 8-week period prior to the start of administration of the assigned treatment. 
+
+  - It is common in such studies to record such baseline measurements, so that the effect of treatment for each subject can be measured relative to how that subject behaved prior to treatment.
+
+- Following initiation of treatment, the number of seizures for each subject was counted for each of 4 consecutive 2-week periods. 
+
+- The age of each subject at the start of the study was also recorded, as it was suspected that subject age might be associated with the effect of the treatment.
+
+
+```{r eval=T, echo = T, include=T}
+
+#  Read in the data
+dat.sz <- read.table("../data/epilepsy.txt")
+colnames(dat.sz) <- c("subj","seize","visit","trt","base","age")
+## trt=0 corresponds to placebo
+head(dat.sz,3)
+
+#  Create other covariates
+dat.sz$o <- 8*(dat.sz$visit==0)+2*(dat.sz$visit>0)
+dat.sz$logo <- log(dat.sz$o)
+dat.sz$vm0 <- as.numeric(dat.sz$visit>0)
+
+#  Basic models -- the unstructured fit using gee() does not converge
+#  even with maxiter set to be much larger than the default
+
+##un.gee <- gee(seize ~ trt + offset(logo), id=subj, family=poisson,
+##              corstr="unstructured", data=dat.sz, maxiter=100)
+
+cs.gee <- gee(seize ~ trt + offset(logo),id=subj,family=poisson,
+              corstr="exchangeable", data=dat.sz)
+summary(cs.gee)
+
+## AR1 
+ar1.gee <- gee(seize ~ trt + offset(logo),id=subj,family=poisson,
+              corstr="AR-M",Mv=1,data=dat.sz)
+ summary(ar1.gee)
+ 
+```
+
+# Seizure data using geeglm()
+
+```{r eval=T, echo = T, include=TRUE}
+## UN using geeglm
+ un.geeglm <- geeglm(seize ~ trt, id=subj,family=poisson("log"),
+             offset=logo, corstr="unstructured",data=dat.sz)
+ summary(un.geeglm)
+
+ ## CS using geeglm
+ cs.geeglm <- geeglm(seize ~ trt,id=subj,family=poisson("log"),
+             offset=logo, corstr="exchangeable",data=dat.sz)
+summary(cs.geeglm)
+ 
+
+ar1.geeglm <- geeglm(seize ~ trt,id=subj,family=poisson("log"),
+             offset=logo, corstr="ar1",data=dat.sz)
+summary(ar1.geeglm)
+
+```
+
+# Investigate if there is a different different effect after baseline visit 0
+This means include an interaction between the indicator variable for visit>0 and the treatment indicator. Use two different working correlation structures and compare the results. 
+
+```{r eval=T, echo=T, include=T}
+baseline_interaction_model_ar1 = geeglm(
+  seize ~ vm0*trt,
+  id=subj,
+  family=poisson('log'),
+  offset=logo,
+  corstr='ar1',
+  data = dat.sz
+)
+
+summary(baseline_interaction_model_ar1)
+
+baseline_interaction_model_exch = geeglm(
+  seize ~ vm0*trt,
+  id=subj,
+  family=poisson('log'),
+  offset=logo,
+  corstr='exchangeable',
+  data = dat.sz
+)
+
+summary(baseline_interaction_model_exch)
+
+```

@@ -3,11 +3,14 @@ library(ggmap)
 library(ggplot2)
 library(janitor)
 library(lubridate)
-library(tidyverse)
 library(sf)
+library(terra)
+library(tidyverse)
+
 
 # https://www.kaggle.com/paultimothymooney/denver-crime-data/version/126?select=crime.csv
 data = read.csv("../data_raw/crime.csv", header=TRUE) %>% clean_names()
+pop = read.csv("../data_raw/census_neighborhood_demographics_2010.csv", header = TRUE) %>% clean_names()
 
 data = data %>%
   filter(
@@ -25,7 +28,7 @@ data$neighborhood_id2 = factor(data$neighborhood_id, levels = neighborhood_level
 ggplot(data, aes(neighborhood_id2)) +
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90), plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Bar plot of counts of crimes by neighborhood, Denver County 2020") +
+  ggtitle("Bar plot of counts of crimes by neighborhood, Denver County 2019") +
   xlab("Neighborhood") +
   ylab("# of Crimes reported")
 
@@ -35,7 +38,7 @@ denver_boundary$neighborhood_id = tolower(denver_boundary$nbhd_name)
 denver_boundary$neighborhood_id = gsub(" - ", "-", denver_boundary$neighborhood_id)
 denver_boundary[denver_boundary$neighborhood_id == "lincoln park",]$neighborhood_id = "lincoln-park"
 denver_boundary$count = count(data, neighborhood_id)$n
-colnames(denver_boundary)[8] = "Crime Quantiles"
+denver_boundary %>% left_join(pop[,2:3], by = c("nbhd_name" = "nbrhd_name"))
 
 # create bins
 bins = quantile(denver_boundary$count)
@@ -48,3 +51,7 @@ ggplot() +
   ggtitle("Crimes by Neighborhood, Denver 2019") +
   scale_fill_brewer(palette = "YlOrRd") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+# areas
+shapes = vect('../shapes/statistical_neighborhoods.shp')
+shapes$areas = expanse(shapes) / 1000000
