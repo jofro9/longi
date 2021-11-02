@@ -1,0 +1,127 @@
+---
+title: "BIOS6643. L13 Generalized Linear Mixed Models"
+cheauthor: "EJC"
+-- date: "" 
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{float}
+output: pdf_document
+---
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\itt}{\item}
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- -->
+
+
+```{r installp, echo = FALSE, eval=T, include=F}
+##library(dplyr)
+##library(tidyverse)
+##library(ggplot2)
+library(geepack)
+library(lme4)
+
+
+```
+
+
+
+# GLMM for Seizure data 
+## Epileptic Seizure Study of a randomized trial reported in Thall and Vail (1990). 
+- 59 subjects with epilepsy suffering from simple or partial seizures were assigned at random to receive either the progabide drug  or a placebo 
+
+- Number of seizures suffered by each subject over the 8-week period prior to the start of study was also recorded 
+
+- After treatment initiation, the number of seizures for each subject was counted for each of 4 consecutive 2-week periods. 
+
+```{r eval=T, echo = T, include=T}
+
+#  Read in the data
+
+dat.sz <- read.table("../data/epilepsy.txt")
+colnames(dat.sz) <- c("subj","seize","visit","trt","base","age")
+## trt=0 corresponds to placebo
+head(dat.sz,3)
+
+#  Create other covariates
+dat.sz$o <- 8*(dat.sz$visit==0)+2*(dat.sz$visit>0)
+dat.sz$logo <- log(dat.sz$o)
+dat.sz$vm0 <- as.numeric(dat.sz$visit>0)
+
+
+```
+
+# Investigate if there is a different different effect after baseline visit 0
+This means include an interaction between the indicator variable for visit>0 and the treatment indicator. 
+```{r eval=T, echo = T, include=TRUE}
+fit.glmm <- glmer(seize ~ offset(logo) + vm0*trt + (1 + vm0 | subj),
+    family=poisson, data=dat.sz)
+
+summary(fit.glmm) 
+
+coef.glmm <-fixef(fit.glmm)
+coef.glmm
+
+```
+
+The model we are fitting is 
+$$\log (\mu_{ij})= \log(t_{ij}) + (\beta_1 + b_{b=1i}) + (\beta_2 vm0_{ij} + b_{2i} vm0_{ij}) + \beta_3 trt_i + \beta_4 trt_i * vm0_i, $$ 
+where $t_{ij}=$ exposure time; $vm0=$ indicator for whether the visit is after baseline (1), $vm0=0$ for baseline visits; trt=1 if progabide and 0 if placebo.
+
+Note interpretation of parameters is as follows
+
+**Placebo** 
+
+  - Baseline $\log (\mu_{ij}/T_{ij})= \beta_1 + b_{1i}$
+  
+  - Follow-up $\log (\mu_{ij}/T_{ij})= (\beta_1 + b_{1i}) + (\beta_{vm0} + b_{2i})$
+
+**Progabide** 
+
+  - Baseline $\log (\mu_{ij}/T_{ij})= \beta_1 + b_{1i} + \beta_{trt}$
+  
+  - Follow-up $\log (\mu_{ij}/T_{ij})= (\beta_1 + b_{1i}) + (\beta_{vm0} + b_{2i}) + \beta_{trt} + \beta_{vm0:trt}$
+
+**Results**:
+
+1. A patient treated with placebo has nearly the same expected seizure rate before and after randomization: exp ($\hat{\beta}_{vm0}=$) `r exp(coef.glmm[2])`
+
+2. A patient treated with progabide has expected seizure rate reduced after treatment: exp($\hat{\beta}_{vm0} + \hat{\beta}_{vm0:trt}$) `r exp(coef.glmm[2] + coef.glmm[4])`
+
+3. Estimated variance of the random intercepts and slopes is relatively large
+
+# Marginal model
+Interpret results of marginal model. 
+
+```{r eval=T, echo = T, include=TRUE}
+## AR1 
+ar1.gee <- geeglm(seize ~ vm0*trt,id=subj,family=poisson("log"),
+             offset=logo, corstr="ar1",data=dat.sz)
+summary(ar1.gee)
+
+
+```
+
+# Investigate if there is a different effect after baseline visit 0 when adjusting for age in the model
+
+```{r eval=T, echo = T, include=TRUE}
+## AR1 
+model1 = geeglm(
+  seize ~ vm0*trt + age,
+  id=subj,
+  family=poisson("log"),
+  offset=logo,
+  corstr="ar1",
+  data=dat.sz
+)
+
+summary(model1)
+
+
+```
