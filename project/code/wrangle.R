@@ -19,39 +19,63 @@ data = data %>%
 
 data = data[!is.na(data$neighborhood_id),]
 
-# histogram of the data
-# Manual levels
-neighborhood_table = table(data$neighborhood_id)
-neighborhood_levels = names(neighborhood_table)[order(neighborhood_table)]
-data$neighborhood_id2 = factor(data$neighborhood_id, levels = neighborhood_levels)
-
-ggplot(data, aes(neighborhood_id2)) +
-  geom_bar() +
-  theme(axis.text.x = element_text(angle = 90), plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Bar plot of counts of crimes by neighborhood, Denver County 2019") +
-  xlab("Neighborhood") +
-  ylab("# of Crimes reported")
-
 # read in shapes
 denver_boundary = st_read("../shapes/statistical_neighborhoods.shp") %>% clean_names()
 denver_boundary$neighborhood_id = tolower(denver_boundary$nbhd_name)
 denver_boundary$neighborhood_id = gsub(" - ", "-", denver_boundary$neighborhood_id)
 denver_boundary[denver_boundary$neighborhood_id == "lincoln park",]$neighborhood_id = "lincoln-park"
 denver_boundary$count = count(data, neighborhood_id)$n
-denver_boundary %>% left_join(pop[,2:3], by = c("nbhd_name" = "nbrhd_name"))
 
-# create bins
-bins = quantile(denver_boundary$count)
-names = c("0-25%", "25-50%", "50-75%", "75-100%")
-denver_boundary$count_bins = cut(denver_boundary$count, breaks = bins, labels = names, include.lowest = TRUE)
-colnames(denver_boundary)[8] = "Crime Quantiles"
+# populations
+pop$nbrhd_name = gsub(" / ", " - ", pop$nbrhd_name)
+pop[15, ]$nbrhd_name = "Central Park"
+denver_boundary = denver_boundary %>% left_join(pop[,2:3], by = c("nbhd_name" = "nbrhd_name"))
 
+# rates
+denver_boundary$crime_rate = denver_boundary$count / (denver_boundary$population_2010)
+denver_boundary$above_median_rate = vector("double", dim(denver_boundary)[1])
+denver_boundary$above_median_rate = 0
+for (i in 1:dim(denver_boundary)[1]) {
+  if (denver_boundary$crime_rate[i] > median(denver_boundary$crime_rate)) {
+    denver_boundary$above_median_rate[i] = 1
+  }
+}
+
+denver_boundary$above_median_rate = as.factor(denver_boundary$above_median_rate)
+
+# Diverging Barcharts
+ggplot(denver_boundary, aes(x=reorder(nbhd_name, crime_rate), y=crime_rate - median(crime_rate), label="Crimes per 1000 people")) + 
+  geom_bar(stat='identity', aes(fill=above_median_rate), position = position_dodge(width = 1), width = 0.5) + 
+  coord_flip() +
+  labs(
+    title="Normalized Crime Incidence Density Rates in Denver, by Neighborhood, 2019",
+    y="Incidence Density Rate",
+    x="Neighborhood",
+    fill=""
+  ) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_fill_manual(labels=c("Below Median", "Above Median"), values = c("green", "red"))
+  
+# map
 ggplot() + 
-  geom_sf(data = denver_boundary, aes(fill = `Crime Quantiles`), size = 0.5, color = "gray") +
-  ggtitle("Crimes by Neighborhood, Denver 2019") +
-  scale_fill_brewer(palette = "YlOrRd") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  geom_sf(data = denver_boundary, aes(fill = crime_rate), size = 0.5, color="gray") +
+  labs(
+    title="Crime Rates by Neighborhood, Denver 2019",
+    fill="Incidence Density Rate"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
+  scale_fill_gradient(
+    low = "yellow",
+    high = "red",
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "fill"
+  )
 
 # areas
 shapes = vect('../shapes/statistical_neighborhoods.shp')
 shapes$areas = expanse(shapes) / 1000000
+
+newdata = cbind(denver_boundary$nbhd_id, denver_boundary$nbhd_name, denver_boundary$count, denver_boundary$population_2010, denver_boundary$crime_rate, denver_boundary$above_median_rate)
+write.table(newdata, "../data_raw/denver_boundary.txt", sep="\t")

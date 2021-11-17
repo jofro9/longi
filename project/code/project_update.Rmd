@@ -1,0 +1,45 @@
+---
+title: "Project Update"
+author: "Joseph Froelicher"
+date: "October 29, 2021"
+output:  pdf_document
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage{titling}
+  - \pretitle{\begin{center}
+    \includegraphics[width = 6in, height = 5in]{csph_logo.jpg}\LARGE\\}
+  - \posttitle{\end{center}}
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../reports") })
+
+---
+```{r analysis, echo=FALSE, include=TRUE}
+library(geepack)
+library(lme4)
+library(nlme)
+library(nnet)
+library(reshape2)
+library(tidyr)
+
+data = read.delim("../data_raw/denver.txt")
+denver = read.delim("../data_raw/denver_boundary.txt")
+colnames(denver) = c("nbhd_id", "nbhd_name", "count", "pop", "rate", "above_median")
+
+log_reg = glmer(cbind(is_crime, is_traffic) ~ (1 | neighborhood_id), family = binomial(link = "logit"),  data=data)
+summary(log_reg)
+ranef(log_reg)
+
+```
+
+\newpage
+![Rates of crime normalized to the median rate per 100](../images/crime_rates_chart.png)
+
+\newpage
+![Map of Crimes commited in Denver County, by neighborhood, organized by quartile of crime count.](../images/crime_rates_map.png)
+
+\newpage
+\section{References}
+
+1. https://www.denvergov.org/opendata/dataset/city-and-county-of-denver-crime
+
+2. https://www.denvergov.org/opendata/dataset/city-and-county-of-denver-census-neighborhood-demographics-2010
