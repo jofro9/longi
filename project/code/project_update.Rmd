@@ -14,20 +14,49 @@ knit: (function(inputFile, encoding) {
 
 ---
 ```{r analysis, echo=FALSE, include=TRUE}
-library(geepack)
+library(corrplot)
+library(dplyr)
 library(lme4)
+library(lubridate)
 library(nlme)
-library(nnet)
-library(reshape2)
+library(tidyverse)
 library(tidyr)
 
 data = read.delim("../data_raw/denver.txt")
-denver = read.delim("../data_raw/denver_boundary.txt")
-colnames(denver) = c("nbhd_id", "nbhd_name", "count", "pop", "rate", "above_median")
 
-log_reg = glmer(cbind(is_crime, is_traffic) ~ (1 | neighborhood_id), family = binomial(link = "logit"),  data=data)
-summary(log_reg)
-ranef(log_reg)
+# logistic regression with random intercept for neighborhood odds of crime vs traffic incident
+log_reg = glmer(cbind(is_crime, is_traffic) ~ (1 | neighborhood_id), family = binomial(link = "logit"), data=data)
+log_summary = summary(log_reg)
+random_effects = exp(ranef(log_reg)$neighborhood_id) # odds ratio
+
+# time analysis
+month = data %>%
+  group_by(neighborhood_id, month = floor_date(as.POSIXct(reported_date), "months")) %>%
+  summarize(count = n(), .groups="rowwise")
+
+month$pop = vector('double', dim(month)[1])
+month$pop = 0
+
+names = unique(data$neighborhood_id)
+
+for (i in 1:dim(month)[1]) {
+  for (j in 1:dim(pop)[1]) {
+    if (month$neighborhood_id[i] == names[j]) {
+      month$pop[i] = data$pop[j]
+    }
+  }
+}
+
+month$log_crime_rate = log(month$count / month$pop)
+month$month = as.factor(month$month)
+month$continuous_months = as.numeric(as.factor(months(month$month)))
+month$id = 1:dim(month)[1]
+
+mixed_reg = gls(log_crime_rate ~ -1 + month + neighborhood_id, data=month)
+mixed_summary = summary(mixed_reg)
+random_effects = exp(ranef(mixed_reg)$neighborhood_id) # n-fold increase
+
+corrplot(mixed_summary$corBeta, type="upper", order="hclust")
 
 ```
 

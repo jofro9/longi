@@ -10,11 +10,13 @@ library(tidyverse)
 
 # https://www.kaggle.com/paultimothymooney/denver-crime-data/version/126?select=crime.csv
 data = read.csv("../data_raw/crime.csv", header=TRUE) %>% clean_names()
+data$reported_date = as.POSIXct(parse_date_time(data$reported_date, '%m/%d/%Y %I:%M:%S %p'))
+
 pop = read.csv("../data_raw/census_neighborhood_demographics_2010.csv", header = TRUE) %>% clean_names()
 
 data = data %>%
   filter(
-    mdy_hms(data$first_occurrence_date) > as.POSIXct("2019-01-01 00:00:00", tz="UTC"), mdy_hms(data$first_occurrence_date) < as.POSIXct("2019-12-31 11:59:59 PM", tz="UTC")
+    as.POSIXct(data$reported_date) > as.POSIXct("2018-01-01 00:00:00", tz="UTC"), as.POSIXct(data$reported_date) < as.POSIXct("2018-12-31 11:59:59 PM", tz="UTC")
   )
 
 data = data[!is.na(data$neighborhood_id),]
@@ -48,7 +50,7 @@ ggplot(denver_boundary, aes(x=reorder(nbhd_name, crime_rate), y=crime_rate - med
   geom_bar(stat='identity', aes(fill=above_median_rate), position = position_dodge(width = 1), width = 0.5) + 
   coord_flip() +
   labs(
-    title="Normalized Crime Incidence Density Rates in Denver, by Neighborhood, 2019",
+    title="Normalized Crime Incidence Density Rates in Denver, by Neighborhood, 2018",
     y="Incidence Density Rate",
     x="Neighborhood",
     fill=""
@@ -60,7 +62,7 @@ ggplot(denver_boundary, aes(x=reorder(nbhd_name, crime_rate), y=crime_rate - med
 ggplot() + 
   geom_sf(data = denver_boundary, aes(fill = crime_rate), size = 0.5, color="gray") +
   labs(
-    title="Crime Rates by Neighborhood, Denver 2019",
+    title="Crime Rates by Neighborhood, Denver 2018",
     fill="Incidence Density Rate"
   ) +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
