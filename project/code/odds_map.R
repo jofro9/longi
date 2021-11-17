@@ -3,6 +3,7 @@ library(ggmap)
 library(ggplot2)
 library(janitor)
 library(lubridate)
+library(RColorBrewer)
 library(sf)
 library(terra)
 library(tidyverse)
@@ -35,7 +36,7 @@ for (i in 1:dim(denver_boundary)[1]) {
 denver_boundary$above_median_rate = as.factor(denver_boundary$above_median_rate)
 
 # logistic regression with random intercept for neighborhood odds of crime vs traffic incident
-log_reg = glmer(cbind(is_crime, is_traffic) ~ (1 | neighborhood_id), family = binomial(link = "logit"), data=data)
+log_reg = glmer(cbind(is_crime, is_traffic) ~ log10(pop) + (1 | neighborhood_id), family = binomial(link = "logit"), data=data)
 log_summary = summary(log_reg)
 random_effects = exp(ranef(log_reg)$neighborhood_id) # odds ratio
 
@@ -50,11 +51,4 @@ ggplot() +
     fill="Odds Ratio"
   ) +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
-  scale_fill_gradient(
-    low = "green",
-    high = "blue",
-    space = "Lab",
-    na.value = "grey50",
-    guide = "colourbar",
-    aesthetics = "fill"
-  )
+  scale_fill_distiller(type="seq", palette = "Spectral")
