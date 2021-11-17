@@ -24,11 +24,6 @@ library(tidyr)
 
 data = read.delim("../data_raw/denver.txt")
 
-# logistic regression with random intercept for neighborhood odds of crime vs traffic incident
-log_reg = glmer(cbind(is_crime, is_traffic) ~ (1 | neighborhood_id), family = binomial(link = "logit"), data=data)
-log_summary = summary(log_reg)
-random_effects = exp(ranef(log_reg)$neighborhood_id) # odds ratio
-
 # time analysis
 month = data %>%
   group_by(neighborhood_id, month = floor_date(as.POSIXct(reported_date), "months")) %>%
@@ -49,7 +44,7 @@ for (i in 1:dim(month)[1]) {
 
 month$log_crime_rate = log(month$count / month$pop)
 month$month = as.factor(month$month)
-month$continuous_months = as.numeric(as.factor(months(month$month)))
+month$continuous_months = as.numeric(month$month)
 month$id = 1:dim(month)[1]
 
 mixed_reg = gls(log_crime_rate ~ -1 + month + neighborhood_id, data=month)

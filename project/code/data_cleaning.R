@@ -1,3 +1,8 @@
+library(dplyr)
+library(janitor)
+library(lubridate)
+library(tidyverse)
+
 # https://www.kaggle.com/paultimothymooney/denver-crime-data/version/126?select=crime.csv
 data = read.csv("../data_raw/crime.csv", header=TRUE) %>% clean_names()
 data$reported_date = as.POSIXct(parse_date_time(data$reported_date, '%m/%d/%Y %I:%M:%S %p'))
