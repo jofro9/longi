@@ -34,6 +34,7 @@ for (i in 1:dim(denver_boundary)[1]) {
 }
 
 denver_boundary$above_median_rate = as.factor(denver_boundary$above_median_rate)
+data$id = 1:dim(data)[1]
 
 # logistic regression with random intercept for neighborhood odds of crime vs traffic incident
 log_reg = glmer(cbind(is_crime, is_traffic) ~ log10(pop) + (1 | neighborhood_id), family = binomial(link = "logit"), data=data)
@@ -41,7 +42,7 @@ log_summary = summary(log_reg)
 random_effects = exp(ranef(log_reg)$neighborhood_id) # odds ratio
 
 denver_boundary = denver_boundary[order(denver_boundary$neighborhood_id),]
-denver_boundary$odds_ratio = random_effects[,1]
+denver_boundary$odds_ratio = random_effects[, 1]
 
 # map
 ggplot() + 

@@ -2,7 +2,10 @@
 title: "Project Update"
 author: "Joseph Froelicher"
 date: "October 29, 2021"
-output:  pdf_document
+output:  
+  pdf_document:
+    toc: true
+    toc_depth: 2
 header-includes:
   - \usepackage{setspace}
   - \usepackage{titling}
@@ -13,53 +16,50 @@ knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir = "../reports") })
 
 ---
-```{r analysis, echo=FALSE, include=TRUE}
-library(corrplot)
-library(dplyr)
-library(lme4)
-library(lubridate)
-library(nlme)
-library(tidyverse)
-library(tidyr)
+\newpage
+\section{Preliminary Analysis, Aim 1}
 
-data = read.delim("../data_raw/denver.txt")
+Aim 1: What is the role of neighborhoods on type of crime committed?
 
-# time analysis
-month = data %>%
-  group_by(neighborhood_id, month = floor_date(as.POSIXct(reported_date), "months")) %>%
-  summarize(count = n(), .groups="rowwise")
+As part of the exploratory analysis, 
 
-month$pop = vector('double', dim(month)[1])
-month$pop = 0
+The initial analysis was ammended slightly from the previous project update. The goal of my first statistical analysis was to compare the types of crimes commited in each neighborhood. The data contain a variable that differentiates between traditional crimes and traffic violations (for our intents and purposes and indication of violent and non-violent crime). This variable was used to constuct a generalized linear mixed model (using `lmer()`) using a logit link for the odds of crimes to traffic violations, and also applying random effects for neighborhood in Denver. Additionally, because crimes and population are known to be related (regardless of its significance in this analysis) we are adjusting for the population. So the results shown in \textit{figure 3} are the odds ratio of crimes to traffic violations in each neighborhood in Denver, adjusted for the population. The odds ratios are gathered by exponentiating the random effects from the logistic regression model shown below.
 
-names = unique(data$neighborhood_id)
+$$log(Y_{ij}) = \beta_0 + \beta_{pop}x_i + b_j$$
+$$Y_{ij}=\Big(\frac{p}{1-p}\Big):\; \text{are the odds of crime over traffic violation}$$
+$$p: \text{is the probability of a crime}$$
+$$(1-p): \text{is the probability of a traffic incident}$$
+$$i = 1, ..., m \\$$
+$$m: \text{is the number of crimes} \\$$
+$$j = 1, ..., n \\$$
+$$n: \text{is the number of neighborhoods}$$
 
-for (i in 1:dim(month)[1]) {
-  for (j in 1:dim(pop)[1]) {
-    if (month$neighborhood_id[i] == names[j]) {
-      month$pop[i] = data$pop[j]
-    }
-  }
-}
+\begin{verbatim}
+log_reg = glmer(
+  cbind(is_crime, is_traffic) ~ log10(pop) + (1 | neighborhood_id),
+  family = binomial(link = "logit"),
+  data=data
+)
+\end{verbatim}
 
-month$log_crime_rate = log(month$count / month$pop)
-month$month = as.factor(month$month)
-month$continuous_months = as.numeric(month$month)
-month$id = 1:dim(month)[1]
+A few notes from the information above. Populations are not normally distributed, nor are they on a usable scale that is condusive for convergence using the package `lme4`, hence the $log_{10}(population)$ is used for this analysis. Convergence criteria per the package defaults were not met for this model, however the gradient value and metric criteria are small enough. The convergence criteria is a tolerance of `0.002` and the largest gradient was `0.00478` (not a large enough gradient to cause concern, if I were to code this problem with normal gradient descent I would set the tolerance much higher).
 
-mixed_reg = gls(log_crime_rate ~ -1 + month + neighborhood_id, data=month)
-mixed_summary = summary(mixed_reg)
-random_effects = exp(ranef(mixed_reg)$neighborhood_id) # n-fold increase
+\section{Analysis Plan, Aim 2}
 
-corrplot(mixed_summary$corBeta, type="upper", order="hclust")
+Aim 2: What is the effect of time on crimes in neighborhoods in denver?
 
-```
+To address this model, I plan to build a linear mixed effects model that predicts crime incidence density rates while adjusting for month and neighborhood. I will use a spatial correlation structure where months that are closer together are more highly correlated than those farther apart. I will fit this model in SAS, exploring random effects for month and neighborhood.
 
 \newpage
+\section{Tables and Figures}
+
 ![Rates of crime normalized to the median rate per 100](../images/crime_rates_chart.png)
 
 \newpage
-![Map of Crimes commited in Denver County, by neighborhood, organized by quartile of crime count.](../images/crime_rates_map.png)
+![Map of Crime Incidence Density Rates in Denver County, by neighborhood, organized by quartile of crime count.](../images/crime_rates_map.png)
+
+\newpage
+![Map of the odds ratio of crimes to traffic incidents commited in Denver County, by neighborhood](../images/crime_odds_ratio_map.png)
 
 \newpage
 \section{References}

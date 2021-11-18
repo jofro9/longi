@@ -37,3 +37,28 @@ for (i in 1:dim(data)[1]) {
 }
 
 write.table(data, "../data_raw/denver.txt", sep="\t")
+
+# time analysis
+month = data %>%
+  group_by(neighborhood_id, month = floor_date(as.POSIXct(reported_date), "months")) %>%
+  summarize(count = n(), .groups="rowwise")
+
+month$pop = vector('double', dim(month)[1])
+month$pop = 0
+
+names = unique(data$neighborhood_id)
+
+for (i in 1:dim(month)[1]) {
+  for (j in 1:dim(pop)[1]) {
+    if (month$neighborhood_id[i] == names[j]) {
+      month$pop[i] = data$pop[j]
+    }
+  }
+}
+
+month$log_crime_rate = log(month$count / month$pop)
+month$month = as.factor(month$month)
+month$continuous_months = as.numeric(month$month)
+month$id = 1:dim(month)[1]
+
+write.table(month, "../data_raw/month.txt", sep="\t")
