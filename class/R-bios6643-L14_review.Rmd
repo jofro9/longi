@@ -1,0 +1,100 @@
+---
+title: "BIOS6643. L14 Review exercises"
+cheauthor: "EJC"
+-- date: "" 
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{float}
+output: pdf_document
+---
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\itt}{\item}
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- -->
+
+
+```{r installp, echo = FALSE, eval=T, include=F}
+##library(dplyr)
+library(tidyverse)
+library(multcomp)
+library(nlme)
+library(lme4)
+
+
+```
+
+
+
+# Question 1. Models for Beta Carotene Data
+
+Using the Beta carotene dataset, answer the following questions using a mixed model with no random effects but an unstructure covariance R.  
+
+  a. Estimate the mean response (beta carotene level) at all weeks in Roche (group2) and BASF 30mg (group 3). 
+
+  b. Test for an interaction between Roche (group2) and BASF 30mg (group 3).
+  
+  c. Test the hypothesis that the 4 groups differ at 6 weeks 
+
+
+```{r "beta_mod1"}
+## import data beta
+beta <- read.csv("../data/beta_carotene_univar.csv", header=TRUE)
+
+head(beta, 3)
+names(beta) <- c("prepar", "id", "y", "time")
+#  mutate(time = as.integer(time))
+
+model1 = gls(
+  y ~ factor(prepar) + factor(time) + factor(prepar)*factor(time),
+  data = beta,
+  correlation = corSymm(form = ~ 1 | factor(id)),
+  weights = varIdent(form = ~ 1 | factor(time)),
+  method="REML"
+)
+
+summary(model1)
+
+for (int i = 0; i < length(c); i++) {
+  
+}
+
+```
+
+
+
+
+
+# Question 2. Models for Stepped Care Data
+## STEPPED-CARE randomized trial
+The dataset we will use in class resembles the trial.
+
+- A behavioral intervention was tested versus usual care in 286 patients with lung or head and neck cancer.  
+- Population: low income patients in the Denver area across 5 hospitals
+- Primary outcomes: anxiety, depression and coping skills scores
+- Outcomes were measured at baseline, and at 6, 12 and 24 weeks
+
+Consider the stepped care data. Use a linear mixed model with time as continuous variable and random intercepts and random slopes. Assume there are no differences in coping self-efficacy score (CSES) at baseline. 
+
+  a. Estimate the mean CSES at 6 weeks for both intervention groups. 
+  
+  b. Estimate the mean CSES difference at 6 weeks. 
+  
+  c. Test the hypothesis that the mean difference 12 weeks - baseline differs across the two treatment groups.
+  
+
+
+
+```{r "read stepped-care", eval=T, echo=TRUE, include=TRUE}
+# Read in data 
+dat.step <- read.csv("../data/stepped-care-class.csv", header=TRUE)
+
+head(dat.step, 3)
+```
+
