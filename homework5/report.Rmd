@@ -11,8 +11,68 @@ header-includes:
 
 \section{Question 1}
 
-For a traditional linear mixed model with a normal outcome, the likelihood is easily written down, and there is a closed form solution the the maximization of the likelihood. This simply means that there is a numerical solution to the maximization of the likelihood. However, for mixed models with non-normal outcomes, the solution to the maximization problem is not nearly as straightforward. The likelihood cannot be written in closed form, so approximation methods (like Gaussian quadrature, as mentioned, or the Laplace method) are used for the likelihood functions. So the complication is that the likelihood itself is defined by an approximation.
+For a traditional linear mixed model with a normal outcome, the likelihood is easily written down, and there is a closed form solution the the maximization of the likelihood. This simply means that there is a numerical solution to the maximization of the likelihood, because the random effects can be easily integrated out. However, for mixed models with non-normal outcomes, the random effects are not so easily integrated out. The solution to the maximization problem is not nearly as straightforward. The likelihood cannot be written in closed form, so approximation methods (like Gaussian quadrature, as mentioned, or the Laplace method) are used for the likelihood functions. So the complication is that the likelihood itself is defined by an approximation.
 
 \section{Question 2}
 
+\subsection{Part A}
 
+#### Counts of Medication use
+
+For medication, because we have count data, we are going to have to build a generalized linear mixed effects model, using a poisson distribution and the log link. We can do this using the `lme()` function in the `nlme` package. In R we are slightly limited by correlation structures, but I would suggest autoregressive structure (AR(1)), specified by `correlation = corAR1(form = counts ~ time | subject)`. You could also use spatial correlation structure, `correlation = corSpatial(form = counts ~ time | subject)`. Lastly, we need to be conscious of overdispersion and may need to adjust the variance by a factor of $\phi$.
+
+#### FEV1
+
+For FEV1, because we have normal data, we can build a linear mixed effects model, using a gaussian distribution. We can do this using the `lme()` function in the `nlme` package. In R we are slightly limited by correlation structures, but I would suggest autoregressive structure (AR(1)), again, specified by `correlation = corAR1(form = counts ~ time | subject)`. You could also use spatial correlation structure, `correlation = corSpatial(form = counts ~ time | subject)`.
+
+\subsection{Part B}
+
+In this case, it sounds like the investigator is interested in the between subject variability. In order to have different between subject variability, we would need to have a $\textbf{G}$ matrix for each of the used at least one medication group, and the use no medications group. This allows us to accound for variability between days where medication is used and days where medication is not used.
+
+#### Counts of Medication use
+
+Again, generalized linear mixed effects model, using the log link on the poisson distribution. This method is going to require a numerical approximation method for calculating the likelihood (random effects cannot be integrated out). This will be a challenging model to interpret, and the numerical integration are drawbacks.
+
+#### FEV1
+
+Again, linear mixed effects model, with a Gaussian distribution, with separate $\textbf{G}$ matrices for use and no use groups.
+
+\subsection{Part C}
+
+#### Counts of Medication use
+
+For this model, we are going to need a generalized linear mixed effects model. In order to do this we need to be able to specify both the $\textbf{G}$ and $\textbf{R}$ matrices (I am not actually sure how to do this in R?). Some other thoughts of mine on the approach include, using a GEE GLM model, and specify the two matrices in there, but then we have neither a closed form solution (GLM), nor the marginal interpretation (GEE), or potentially modeling the medication use as a continuous variable and then using a linear mixed model. And lastly we could 
+
+#### FEV1
+
+This is fairly straightforward for FEV1. We can specify a linear mixed effects model with both random slopes and random intercepts. We can also specify the correlation structure to be AR(1). This is exactly what a linear mixed effects model was designed to do.
+
+\section{Question 3}
+
+```{r}
+library(lme4)
+
+data = read.table("../data/toenail-data.txt")
+
+model1 = glmer(
+  outcome ~ -1 + treatment:month + (1 | id),
+  family = binomial,
+  data = data
+)
+
+model1_sum = summary(model1)
+
+model1_sum
+
+```
+
+```{r}
+library(gee)
+
+mod2 = gee(outcome ~ -1 +  month + trt*month, 
+           family = binomial(link = "logit"),
+           id = ID,
+           data = toe,
+           corstr= "unstructured")
+
+summary(mod2)
