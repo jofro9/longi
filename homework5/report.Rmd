@@ -1,0 +1,18 @@
+---
+title: "Homework 5"
+author: "Joseph Froelicher"
+date: December 24, 2021
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+  - \usepackage{geometry}
+  - \usepackage{lscape}
+---
+
+\section{Question 1}
+
+For a traditional linear mixed model with a normal outcome, the likelihood is easily written down, and there is a closed form solution the the maximization of the likelihood. This simply means that there is a numerical solution to the maximization of the likelihood. However, for mixed models with non-normal outcomes, the solution to the maximization problem is not nearly as straightforward. The likelihood cannot be written in closed form, so approximation methods (like Gaussian quadrature, as mentioned, or the Laplace method) are used for the likelihood functions. So the complication is that the likelihood itself is defined by an approximation.
+
+\section{Question 2}
+
+

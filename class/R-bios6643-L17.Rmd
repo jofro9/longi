@@ -1,0 +1,111 @@
+---
+title: "BIOS6643. L17  Joint Models of Longitudinal and Survival Data"
+cheauthor: "EJC"
+-- date: "" 
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{float}
+output: pdf_document
+---
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\itt}{\item}
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- -->
+
+
+```{r installp, echo = FALSE, eval=T, include=F}
+##library(dplyr)
+##library(tidyverse)
+##library(ggplot2)
+
+##library(HRW) ## to load spinal bone mineral data
+library(nlme)
+library(JM)
+
+
+```
+# In the JM package methods are available for the majority of the generic functions
+- summary(), anova(), vcov(), logLik(), AIC() 
+- coef(),fixef(),ranef()
+- fitted(), residuals()
+- plot()
+
+
+## Primary Biliary Cirrhosis (PBC) study
+- Primary biliary cirrhosis (PBC) is a chronic liver disease that leads to cirrhosis and eventually death
+
+- 10-year study conducted by Mayo clinic (Murtagh et al., Hepatology, 1994) 
+
+- 158 randomized to treatment, 154 to placebo
+
+- Longitudinal biomarker measurements of serum bilirubin at times 0, 6m, 1y, 2y, etc.
+
+\medskip
+**Outcomes:**
+
+  1. Longitudinal biomarker: serum bilirubin
+
+  2. Time to death
+
+**Question of interest:**
+
+  - What is the association between the time-varying serum bilirubin (that is measured with error) and the risk of death?
+
+```{r "pbc.data", eval=T, echo = T, include=T, out.width="90%"}
+head(pbc2, 2)
+
+```
+
+## Joint model
+```{r "jm", eval=T, echo = T, include=T, out.width="90%"}
+
+lme.fit <- lme(log(serBilir) ~ year + year:drug, 
+              data=pbc2, random = ~year|id)
+
+surv.fit <- coxph(Surv(years, status2) ~ drug, 
+              data=pbc2.id, x=TRUE)
+
+## the knots of the piecewise constant are chosen based on the percentiles of events (5-6 internal knots by default)
+joint.fit <- jointModel(lme.fit, surv.fit, 
+              timeVar="year", method = "piecewise-PH-GH")
+ 
+```
+
+## Summary
+```{r "jm.sum", eval=T, echo = T, include=T, out.width="90%"}
+summary(joint.fit)
+
+```
+
+## Confidence intervals
+```{r "jm.ci", eval=T, echo = T, include=T, out.width="90%"}
+confint(joint.fit, parm='all')
+
+```
+
+## Comparison of nested models
+Conduct a test for whether there is a drug effect in the survival model. 
+```{r test, echo=TRUE, include=TRUE}
+lme.fit0 <- lme(log(serBilir) ~ year + year:drug, 
+              data=pbc2, random = ~year|id)
+
+
+surv.fit0 <- coxph(Surv(years, status2) ~ 1, 
+              data=pbc2.id, x=TRUE)
+
+joint.fit0 <- jointModel(lme.fit0, surv.fit0, 
+              timeVar="year", method = "piecewise-PH-GH")
+ 
+anova(joint.fit0, joint.fit)
+
+summary(joint.fit)
+
+```
+
