@@ -53,26 +53,56 @@ This is fairly straightforward for FEV1. We can specify a linear mixed effects m
 library(lme4)
 
 data = read.table("../data/toenail-data.txt")
-
 model1 = glmer(
-  outcome ~ -1 + treatment:month + (1 | id),
+  outcome ~ -1 + factor(treatment)*month + (1 | id),
   family = binomial,
   data = data
 )
 
 model1_sum = summary(model1)
-
 model1_sum
 
 ```
 
+The average individual in the Intraconazole treatment was `r round(exp(model1_sum$coefficients[1, 1])*100, 2) + round(exp(model1_sum$coefficients[3, 1])*100, 2)`% less likely to have onycholysis (toenail separation) per month (interpretation of the group effect, and month effect). The average individual in the Ter treatment was `r round(exp(model1_sum$coefficients[2, 1])*100, 2) + round(exp(model1_sum$coefficients[3, 1])*100, 2) + round(exp(model1_sum$coefficients[4, 1])*100, 2)`% more likely to have onycholysis (toenail separation) per month (interpretation of the group effect, month effect, and interaction effect.
+
 ```{r}
 library(gee)
 
-mod2 = gee(outcome ~ -1 +  month + trt*month, 
-           family = binomial(link = "logit"),
-           id = ID,
-           data = toe,
-           corstr= "unstructured")
+model2 = gee(
+  outcome ~ -1 + factor(treatment)*month, 
+  family = binomial(link = "logit"),
+  id = id,
+  data = data,
+  corstr= "unstructured"
+)
 
-summary(mod2)
+model2_sum = summary(model2)
+model2_sum
+
+```
+
+The average individual in the Intraconazole treatment was `r round(exp(model2_sum$coefficients[1, 1])*100, 2) + round(exp(model2_sum$coefficients[3, 1])*100, 2)`% more likely to have onycholysis (toenail separation) per month (interpretation of the group effect, and month effect). The average individual in the Ter treatment was `r round(exp(model2_sum$coefficients[2, 1])*100, 2) + round(exp(model2_sum$coefficients[3, 1])*100, 2) + round(exp(model2_sum$coefficients[4, 1])*100, 2)`% more likely to have onycholysis (toenail separation) per month (interpretation of the group effect, month effect, and interaction effect.
+
+\section{Question 4}
+
+\begin{verbatim}
+/*Note v= 1 if visit>0; otherwise v=0*/
+title "RANDOM INTERCEPT ONLY, ADAPTIVE QUADATURE";
+proc glimmix data=seizure method=quad(qpoints=25);
+  class subj;
+  model seize = age v trt trt*v / solution link=log 
+        dist=poisson offset=logo;
+  random int / subject=subj type=un;
+run;
+\end{verbatim}
+
+\subsection{Part A}
+
+There was a significant result for both the intercept and the indicator variable created that shows if the subjects visit was at baseline or after baseline. The intercept should not be interpreted (age is never 0, exprrapolation). That being said, the intecept is interpreted as the rate ratio of seizures for those on treatment over those on placebo (again at age 0).
+
+A one year increase in age resulted in $e^{0.01543} = 1.0155$ (p = 0.35), times increase in the odds of seizure. The odds ratio of seizures for the treatment group over the placebo group was $e^{0.1108} = 1.117$ (p = 0.0189). And the treatment group and visit after baseline group interaction resulted in a $e^{0.1037} = 1.118$ time increase in the odds of seizure (p = 0.1123).
+
+\subsection{Part B}
+
+The intercept should not be interpreted (age is never 0). From the GEE model, using the empirical standard error estimates, each one year increase in age results in a $e^{0.0321}=1.0326$ time increase in the odds (p = 0.0296, statistically significat). The visit occurring after baseline results in a $e^{0.1108}=1.117$ increase in the odds (p= 0.3399). Being in the treatment group is associated with a $e^{0.0175}=1.0176$ increase in the odds compared to the non-treatment group ( p = 0.9348). Lastly, Being in the treatment group and the visit occurring after baseline resulted in a $e^{0.1037}=1.109$ increase in the odds of having a seizure (p = 0.6274).
