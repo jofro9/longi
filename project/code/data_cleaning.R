@@ -47,18 +47,38 @@ month$pop = vector('double', dim(month)[1])
 month$pop = 0
 
 names = unique(data$neighborhood_id)
+names = names[order(names)]
+pop = pop[order(pop$nbrhd_name),]
 
 for (i in 1:dim(month)[1]) {
   for (j in 1:dim(pop)[1]) {
     if (month$neighborhood_id[i] == names[j]) {
-      month$pop[i] = data$pop[j]
+      month$pop[i] = pop$population_2010[j]
     }
   }
 }
 
 month$log_crime_rate = log(month$count / month$pop)
-month$month = as.factor(month$month)
-month$continuous_months = as.numeric(month$month)
-month$id = 1:dim(month)[1]
 
 write.table(month, "../data_raw/month.txt", sep="\t")
+
+# days
+day = data %>%
+  group_by(neighborhood_id, day = floor_date(as.POSIXct(reported_date), "days")) %>%
+  summarize(count = n(), .groups="rowwise")
+
+day$pop = vector('double', dim(day)[1])
+day$pop = 0
+
+for (i in 1:dim(day)[1]) {
+  for (j in 1:dim(pop)[1]) {
+    if (day$neighborhood_id[i] == names[j]) {
+      day$pop[i] = pop$population_2010[j]
+    }
+  }
+}
+
+day$log_crime_rate = log(day$count / day$pop)
+
+write.table(day, "../data_raw/day.txt", sep="\t")
+

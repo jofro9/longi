@@ -1,0 +1,17 @@
+---
+output: pdf_document
+---
+
+```{r}
+library(kableExtra)
+
+data = read.csv('../reports/model_table.csv', header = T)
+colnames(data) = c("", "Covariance", "", "Estimates", "", "", "Criterion", "", "")
+
+
+
+
+kable(data, booktabs=T)
+
+
+```
